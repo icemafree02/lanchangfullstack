@@ -951,6 +951,28 @@ app.get('/getpreparingorders', (req, res) => {
   });
 });
 
+app.get('/getServedOrders', (req, res) => {
+  const query = `
+    SELECT o.*, 
+           COUNT(od.Order_detail_id) AS total_items,
+           SUM(CASE WHEN od.status_id = '4' THEN 1 ELSE 0 END) AS preparing_items
+    FROM \`order\` o
+    JOIN order_detail od ON o.Order_id = od.Order_id
+    GROUP BY o.Order_id
+    HAVING preparing_items > 0
+    ORDER BY o.Order_datetime DESC
+  `;
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('Error fetching preparing orders:', error);
+      res.status(500).json({ error: 'An error occurred while fetching preparing orders' });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
 
 app.put('/updateorderpayment/:orderId', async (req, res) => {
   const { orderId } = req.params;

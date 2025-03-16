@@ -22,7 +22,7 @@ function MenuForm() {
 
   const [previewImage, setPreviewImage] = useState(null);
 
-  const menutype = ['เครื่องดื่ม',  "ของหวาน" ,"อื่นๆ"];
+  const menutype = ['เครื่องดื่ม',  "เครื่องเคียง" ,"อื่นๆ"];
 
   const navigate = useNavigate();
 

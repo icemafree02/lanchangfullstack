@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-
 import { Navbarow } from '../owner/Navbarowcomponent/navbarow/index-ow';
+
+import { useNavigate } from 'react-router-dom';
 
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
   FormControlLabel,
   Input
 } from '@mui/material';
+
 
 const styles = {
   orderPage: {
@@ -75,6 +77,21 @@ const styles = {
   },
 };
 
+const buttonStyle = {
+  padding: '0.5rem 1.25rem',
+  color: 'white',
+  fontWeight: '500',
+  border: 'none',
+  transitionDuration: '200ms',
+  width: '70%',
+  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+  cursor: 'pointer',
+  fontSize: '15px',
+  backgroundColor: '#3b82f6',
+  display:'flex',
+  justifyContent:'center'
+};
+
 //////////////////////////////////////////////////////////
 
 const OrderDisplay = () => {
@@ -97,7 +114,11 @@ const OrderDisplay = () => {
   const [checkedItems, setCheckedItems] = useState({});
   const [selectAll, setSelectAll] = useState(false);
 
-  
+  const navigate = useNavigate();
+  const HandleupdateOrder = () => {
+
+    navigate('/updateServedOrder');
+  }
 
   const calculateSelectedTotal = (orderId) => {
     const order = orders.find(o => o.Order_id === orderId);
@@ -110,7 +131,6 @@ const OrderDisplay = () => {
       return total;
     }, 0);
   };
-
 
   const handleCheckboxChange = (orderId, itemId) => {
     setCheckedItems(prev => ({
@@ -175,17 +195,18 @@ const OrderDisplay = () => {
       const response = await fetch('http://localhost:3333/getserveoder');
       if (response.ok) {
         const data = await response.json();
+        console.log(data);
         const ordersWithDetails = await Promise.all(data.map(async (order) => {
           const detailsResponse = await fetch(`http://localhost:3333/getorderdetail/${order.Order_id}`);
           const details = await detailsResponse.json();
           console.log(details);
-          setNoodleMenu(details.filter(item => item.status_id === 5) );
+          setNoodleMenu(details.filter(item => item.status_id === 5));
           return { ...order, details: details.filter(item => item.status_id === 5) };
-          
+
         }));
         const sortedOrders = ordersWithDetails
-          .filter(order => order.details.length > 0) 
-          .sort((a, b) => new Date(a.Order_datetime ) - new Date(b.Order_datetime));
+          .filter(order => order.details.length > 0)
+          .sort((a, b) => new Date(a.Order_datetime) - new Date(b.Order_datetime));
         setOrders(sortedOrders);
       } else {
         console.error('Failed to fetch  orders');
@@ -197,11 +218,11 @@ const OrderDisplay = () => {
 
   const fetchMenus = async () => {
     try {
-      const otherRes = await 
+      const otherRes = await
         fetch('http://localhost:3333/getmenu');
       const otherData = await (otherRes.json());
       setOtherMenu(otherData);
-      console.log('Other Menu:', otherData);    
+      console.log('Other Menu:', otherData);
     } catch (error) {
       console.error('Error fetching menus:', error);
     }
@@ -227,7 +248,7 @@ const OrderDisplay = () => {
       setSizes(sizeData);
       setMeats(meatData);
       setNoodleTypes(noodleTypeData);
-      
+
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -255,35 +276,35 @@ const OrderDisplay = () => {
 
   function getMenuName(orderDetail) {
     if (!orderDetail) return 'ไม่ระบุ';
-    
+
     const noodle_type_name = getNoodleTypeName(orderDetail.Noodle_type_id);
     const soup_name = getSoupName(orderDetail.Soup_id);
     const meat_name = getMeatName(orderDetail.Meat_id);
     const size_name = getSizeName(orderDetail.Size_id);
-    
-    return `${noodle_type_name} ${soup_name} ${meat_name} (${size_name})`;
-}
 
-const getItemDetails = (orderDetail) => {
+    return `${noodle_type_name} ${soup_name} ${meat_name} (${size_name})`;
+  }
+
+  const getItemDetails = (orderDetail) => {
     if (orderDetail) {
-        // If the order includes a custom noodle dish
-        if (orderDetail.Noodle_type_id || orderDetail.Soup_id || orderDetail.Meat_id || orderDetail.Size_id) {
-            return {
-                name: getMenuName(orderDetail),
-                price: orderDetail.Price || 0, // Assuming price is stored in order_detail
-            };
-        } 
-        // If the order is from the standard menu
-        else if (orderDetail.Menu_id && Array.isArray(otherMenu)) {
-            const other = otherMenu.find(o => o.Menu_id === orderDetail.Menu_id);
-            return other ? {
-                name: other.Menu_name,
-                price: orderDetail.Price || other.Menu_price,
-            } : null;
-        }
+      // If the order includes a custom noodle dish
+      if (orderDetail.Noodle_type_id || orderDetail.Soup_id || orderDetail.Meat_id || orderDetail.Size_id) {
+        return {
+          name: getMenuName(orderDetail),
+          price: orderDetail.Price || 0, // Assuming price is stored in order_detail
+        };
+      }
+      // If the order is from the standard menu
+      else if (orderDetail.Menu_id && Array.isArray(otherMenu)) {
+        const other = otherMenu.find(o => o.Menu_id === orderDetail.Menu_id);
+        return other ? {
+          name: other.Menu_name,
+          price: orderDetail.Price || other.Menu_price,
+        } : null;
+      }
     }
     return null;
-};
+  };
 
   //ปุ่มชำระเงินเเต่ละรายการ
 
@@ -514,7 +535,7 @@ const getItemDetails = (orderDetail) => {
             </button>
           </>
         )}
-        
+
         {showChange && (
           <Dialog open={showChange} onClose={() => setShowChange(false)}>
             <DialogTitle>เงินทอน</DialogTitle>
@@ -598,10 +619,8 @@ const getItemDetails = (orderDetail) => {
   );
 
 
-
-
   return (
-    <div style={styles.orderPage}>
+    <div>
       <Navbarow />
       <div style={styles.orderContainer}>
         <h1 style={{ textAlign: 'center', marginBottom: '1rem' }}>ชำระเงิน</h1>
@@ -648,7 +667,7 @@ const getItemDetails = (orderDetail) => {
                             onChange={() => handleCheckboxChange(order.Order_id, item.Order_detail_id)}
                           />
                         }
-                        
+
                       />
                       <div>
                         <strong style={{ margin: "10px", fontSize: '1.3rem', marginBottom: '1rem' }}>{itemDetails.name}</strong>
@@ -656,17 +675,17 @@ const getItemDetails = (orderDetail) => {
                           <div >
                             <strong>{item.Order_detail_quantity} รายการ </strong>
                           </div>
-                          <div style={{margin:"5px 0px"}}>
+                          <div style={{ margin: "5px 0px" }}>
                             {item.Order_detail_price * item.Order_detail_quantity} บาท
                           </div>
-                          <div style={{margin:"5px 0px",color:'gray'}}>
+                          <div style={{ margin: "5px 0px", color: 'gray' }}>
                             {item.Order_detail_additional && (
                               <>
                                 <span>เพิ่มเติม : {item.Order_detail_additional}</span>
                               </>
                             )}
                           </div>
-                          <div style={{color:item.Order_detail_takehome ? "darkred" :"darkgreen"}}>
+                          <div style={{ color: item.Order_detail_takehome ? "darkred" : "darkgreen" }}>
                             {(item.Order_detail_takehome) === 1 ? 'รับกลับบ้าน' : 'ทานที่ร้าน'}
                           </div>
                         </div>
@@ -693,13 +712,30 @@ const getItemDetails = (orderDetail) => {
 
 
 
-      {openPaymentDialog && (
-        <PaymentDialog
-          open={openPaymentDialog}
-          onClose={handleClosePayment}
-        />
-      )}
-    </div>
+      {
+        openPaymentDialog && (
+          <PaymentDialog
+            open={openPaymentDialog}
+            onClose={handleClosePayment}
+          />
+        )
+      }
+      <div style={{
+        justifyContent:'center',
+        paddingTop: '10px',
+        paddingBottom:'30px',
+        display: 'flex',
+        margin:'0 10%'
+      }}>
+        <button
+          style={buttonStyle}
+          onClick={HandleupdateOrder}
+        >
+          อัปเดตรายการอาหารลูกค้า
+        </button>
+      </div>
+      
+    </div >
   );
 };
 

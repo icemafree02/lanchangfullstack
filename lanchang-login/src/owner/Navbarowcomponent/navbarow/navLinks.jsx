@@ -71,6 +71,12 @@ export function NavLinks(props) {
           <Link href="./association">Association</Link>
         </LinkItem>
         <LinkItem>
+          <Link href="./ordercustomer">สั่งอาหารให้ลูกค้า</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./promotion">โปรโมชัน</Link>
+        </LinkItem>
+        <LinkItem>
           <Link href="./employee">พนักงาน</Link>
         </LinkItem>
         <LinkItem>

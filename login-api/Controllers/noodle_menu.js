@@ -25,10 +25,10 @@ exports.post = async (req, res) => {
                  meat.meat_price + 
                  size.size_price) as Total_price
              FROM noodle_type, soup, meat,size
-             WHERE noodle_Type.noodle_type_id LIKE ? 
-               AND soup.soup_id LIKE ?
-               AND meat.meat_id LIKE ?
-               AND size.size_id LIKE ?`,
+             WHERE noodle_Type.noodle_type_id = ? 
+               AND soup.soup_id = ?
+               AND meat.meat_id = ?
+               AND size.size_id = ?`,
             [noodleType, soupType, meatType, size],
             (error, results) => {
                 if (error) {

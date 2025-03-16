@@ -14,7 +14,4 @@ function ownerpage() {
     )
 }
 
-
-
-
 export default ownerpage

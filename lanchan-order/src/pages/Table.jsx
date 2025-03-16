@@ -25,7 +25,10 @@ function TableSelection() {
       if (!reserveResponse.ok) {
         throw new Error(`Failed to reserve table ${tableNumber}`);
       }
-      const createOrderResponse = await fetch('http://localhost:3333/orders', {
+
+      
+      const createOrderResponse = await 
+      fetch('http://localhost:3333/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

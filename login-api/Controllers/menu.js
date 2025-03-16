@@ -233,33 +233,35 @@ exports.getAssociation = async (req, res) => {
   try {
     const query = `
       SELECT 
-        order_detail.order_id,
+        order_detail.order_id, o.order_datetime , 
         GROUP_CONCAT(
           CASE 
             WHEN menu.menu_name IS NOT NULL THEN menu.menu_name
             ELSE CONCAT(
-              COALESCE(soup.soup_name, 'Unknown Soup'), ':',
-              COALESCE(noodle_type.noodle_type_name, 'Unknown Noodle'), ':',
-              COALESCE(meat.meat_name, 'Unknown Meat'), ':',
-              COALESCE(size.size_name, 'Unknown Size')
+              COALESCE(soup.soup_name, 'ไม่ระบุ'), ' ',
+              COALESCE(noodle_type.noodle_type_name, 'ไม่ระบุ'), ' ',
+              COALESCE(meat.meat_name, 'ไม่ระบุ'), ' ',
+              COALESCE(size.size_name, 'ไม่ระบุ')
             )
-          END
+          END 
+          SEPARATOR ', '
         ) AS items
-      FROM order_detail
+      FROM order_detail 
+      LEFT JOIN \`order\` AS o ON order_detail.order_id = o.order_id  
       LEFT JOIN menu ON order_detail.menu_id = menu.menu_id
       LEFT JOIN noodle_type ON order_detail.noodle_type_id = noodle_type.noodle_type_id
       LEFT JOIN soup ON order_detail.soup_id = soup.soup_id
       LEFT JOIN meat ON order_detail.meat_id = meat.meat_id
       LEFT JOIN size ON order_detail.size_id = size.size_id
-      GROUP BY order_detail.order_id`;
+      GROUP BY order_detail.order_id, o.order_datetime`;
 
-    const [rows] = await connection.query(query);
+    const [GetTransaction] = await connection.query(query);
 
-    console.log("Query Result:", rows);
+    console.log("Query Result:", GetTransaction);
 
-    if (!rows || rows.length === 0) {
+    if (!GetTransaction || GetTransaction.length === 0) {
       return res.json({
-        success: true,
+        success: false,
         data: {
           transactions: [],
           totalTransactions: 0
@@ -267,15 +269,19 @@ exports.getAssociation = async (req, res) => {
       });
     }
 
-    const transactions = rows.map(row => {
-      const items = row.items 
-        ? row.items.split(',').map(item => item.trim()).filter(item => item !== '') 
+    const transactions = GetTransaction.map(GetTransaction => {
+      const items = GetTransaction.items 
+        ? GetTransaction.items.split(',').map(item => item.trim()).filter(item => item !== '') 
         : [];
       return {
-        orderId: row.order_id,
+        orderId: GetTransaction.order_id,
+        Date: GetTransaction.order_datetime,
         items: items
       };
+      
     });
+
+    console.log('transactions: ', transactions);
 
     res.json({
       success: true,
@@ -287,10 +293,7 @@ exports.getAssociation = async (req, res) => {
 
   } catch (error) {
     console.error('Error in getAssociation:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json();
   }
 };
 
