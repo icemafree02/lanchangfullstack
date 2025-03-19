@@ -41,11 +41,36 @@ const styles = {
     fontSize: '0.9rem',
     color: '#666',
   },
+  filterContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '1rem',
+    margin: '20px 0',
+    padding: '0 1rem',
+  },
+  dateInput: {
+    padding: '0.5rem',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+    fontSize: '1rem',
+  },
+  filterButton: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+  }
 };
 
 function OrderDisplay() {
   const [orders, setOrders] = useState([]);
-  const [status, setstatus] = useState([]);
+  const [status, setStatus] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     fetchOrders();
@@ -58,6 +83,7 @@ function OrderDisplay() {
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
+        setFilteredOrders(data); // Initially show all orders
       } else {
         console.error('Failed to fetch orders');
       }
@@ -73,26 +99,68 @@ function OrderDisplay() {
       ]);
       const [statusdata] = await Promise.all([
         statuses.json(),
-      ])
-      setstatus(statusdata)
+      ]);
+      setStatus(statusdata);
     } catch (error) {
       console.error('Error ', error);
     }
   };
 
+  const filterOrdersDate = () => {
+    let filtered = [...orders];
+    
+    if (startDate) {
+      filtered = filtered.filter(order => 
+        new Date(order.Order_datetime) >= new Date(startDate)
+      );
+    }
+    
+    if (endDate) {
+      filtered = filtered.filter(order => 
+        new Date(order.Order_datetime) <= new Date(endDate)
+      );
+    }
+    
+    setFilteredOrders(filtered);
+  };
+
   const statusname = (statusId) => {
     const foundStatus = status.find(s => s.status_id === statusId);
     return foundStatus ? foundStatus.status_name : 'ไม่ระบุ';
-
   };
-  console.log(status);
 
   return (
     <div style={styles.orderPage}>
       <Navbarow />
       <h2 style={{ textAlign: 'center', margin: '20px 0' }}>ประวัติออเดอร์</h2>
+      
+      <div style={styles.filterContainer}>
+        <div>
+          <label htmlFor="startDate">วันที่เริ่มต้น: </label>
+          <input
+            type="date"
+            id="startDate"
+            style={styles.dateInput}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="endDate">วันที่สิ้นสุด: </label>
+          <input
+            type="date"
+            id="endDate"
+            style={styles.dateInput}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+        <button onClick={filterOrdersDate} style={styles.filterButton}>กรองข้อมูล</button>
+      </div>
+      
+
       <div style={styles.orderContainer}>
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <Link to={`/historydetail/${order.Order_id}`} key={order.Order_id} style={styles.orderItem}>
             <div style={styles.orderInfo}>
               <h3 style={styles.orderInfoH3}>เลขออเดอร์: {order.Order_id}</h3>

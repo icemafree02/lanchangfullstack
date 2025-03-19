@@ -1,8 +1,8 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { setSelectedTable } from '../slice/tableslice'; 
-import { setOrderId } from '../slice/cartslice'; 
+import { setSelectedTable } from '../slice/tableslice';
+import { setOrderId } from '../slice/cartslice';
 import { useTableSelection } from '../Functions/tableselection';
 import '../table.css';
 import lanchan from '../image/lanchan.png';
@@ -10,15 +10,26 @@ import lanchan from '../image/lanchan.png';
 function TableSelection() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { tables, loading, error } = useTableSelection();  
+  const { tables, loading, error } = useTableSelection();
 
-  const reserveTable = async (tableNumber) => { 
+  const reserveTable = async (tableNumber) => {
     try {
+      const existingTable = sessionStorage.getItem('tableNumber');
+      const existingOrderId = sessionStorage.getItem('orderId');
+
+      // ✅ If both table and order already exist, just navigate
+      if (existingTable && existingOrderId) {
+        console.log("Using existing tableNumber and orderId for this tab:", existingTable, existingOrderId);
+        dispatch(setSelectedTable(Number(existingTable)));
+        dispatch(setOrderId(Number(existingOrderId)));
+        navigate('/menu_order');
+        return;
+      }
+
+      // Step 1: Reserve the selected table
       const reserveResponse = await fetch(`http://localhost:3333/table/${tableNumber}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_id: 2 }),
       });
 
@@ -26,23 +37,38 @@ function TableSelection() {
         throw new Error(`Failed to reserve table ${tableNumber}`);
       }
 
-      
-      const createOrderResponse = await 
-      fetch('http://localhost:3333/orders', {
+      // ✅ Now, safely store the table number
+      sessionStorage.setItem('tableNumber', tableNumber.toString());
+      dispatch(setSelectedTable(tableNumber));
+
+      // Step 2: If an existing order is found, use it
+      if (existingOrderId) {
+        console.log("Using existing orderId for this tab:", existingOrderId);
+        dispatch(setOrderId(Number(existingOrderId)));
+        navigate('/menu_order');
+        return;
+      }
+
+      // Step 3: Create a new order for this table
+      const createOrderResponse = await fetch('http://localhost:3333/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableId: tableNumber }),
       });
 
       if (!createOrderResponse.ok) {
         throw new Error('Failed to create new order');
       }
-      const { orderId } = await createOrderResponse.json();
 
-      dispatch(setSelectedTable(tableNumber));
-      dispatch(setOrderId(orderId)); 
+      const responseData = await createOrderResponse.json();
+      const orderId = responseData.orderId; // Ensure this matches your backend response
+
+      if (orderId) {
+        // ✅ Store orderId only in this tab
+        sessionStorage.setItem('orderId', orderId.toString());
+        dispatch(setOrderId(orderId));
+      }
+
       navigate('/menu_order');
     } catch (error) {
       console.error('Error reserving table or creating order:', error);
@@ -50,7 +76,6 @@ function TableSelection() {
     }
   };
 
-  
   const handleTableSelection = (tableNumber) => {
     reserveTable(tableNumber);
   };
@@ -72,7 +97,7 @@ function TableSelection() {
         <div id="table-container">
           {tables.map((table) => {
             const { tables_number, status_id } = table;
-            const isReserved = status_id === 2; 
+            const isReserved = status_id === 2;
             const isAvailable = status_id === 1;
             return (
               <button

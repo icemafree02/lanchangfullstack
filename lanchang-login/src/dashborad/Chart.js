@@ -20,7 +20,6 @@ export default function MonthlyRevenueChart() {
           throw new Error('Network response was not ok');
         }
         const revenueData = await response.json();
-        
 
         const chartData = revenueData.map((item) => ({
           time: `${monthNames[item.month -1]} ${item.year + 543}`,

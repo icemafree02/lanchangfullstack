@@ -3,11 +3,11 @@ import { createSlice } from '@reduxjs/toolkit';
 const tableSlice = createSlice({
   name: 'table',
   initialState: {
-    selectedTable: null,  // Only keep track of the selected table
+    selectedTable: null, 
   },
   reducers: {
     setSelectedTable: (state, action) => {
-      state.selectedTable = action.payload;  // Update the selected table
+      state.selectedTable = action.payload;
     },
   },
 });

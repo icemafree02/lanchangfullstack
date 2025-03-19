@@ -162,8 +162,8 @@ html {
 
 .menu-picture {
 	border-radius: 10px;
-	max-width: 20%;
-	min-width: 130px;
+	max-width: 10%;
+	min-width: 80px;
 }
 
 .menu-item {

@@ -3,12 +3,23 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import '../menu_ordered.css';
 import noodle from '../image/noodle.png';
+import { setOrderId } from '../slice/cartslice';
+import { useDispatch } from 'react-redux';
 
 const MenuOrdered = () => {
   const [orderDetails, setOrderDetails] = useState([]);
   const orderId = useSelector(state => state.cart.orderId);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  useEffect(() => {
+    const storedOrderId = sessionStorage.getItem('orderId'); // ✅ Use sessionStorage instead
+    if (storedOrderId) {
+      dispatch(setOrderId(Number(storedOrderId))); 
+    }
+    console.log("Current tab orderId:", storedOrderId);
+  }, [dispatch]);
+  
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (orderId) {

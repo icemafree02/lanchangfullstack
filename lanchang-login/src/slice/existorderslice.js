@@ -1,15 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const orderSlice = createSlice({
-    name: 'orders',
+const ExistorderSlice = createSlice({
+    name: 'existorders',
     initialState: {
         createOrder: [],
     },
     reducers: {
-        CreateOrder(state, action) {
+        ExistCreateOrder(state, action) {
             state.createOrder = action.payload;
         },
-        AddMenuOrder(state, action) {
+        ExistAddMenuOrder(state, action) {
             const { orderId } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
@@ -24,7 +24,7 @@ const orderSlice = createSlice({
                 });
             }
         },
-        AddNoodleOrder(state, action) {
+        ExistAddNoodleOrder(state, action) {
             const { orderId } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
@@ -38,21 +38,21 @@ const orderSlice = createSlice({
                 });
             }
         },
-        RemoveMenuOrder(state, action) {
+        ExistRemoveMenuOrder(state, action) {
             const { orderId, menuId } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
                 order.MenuList = order.MenuList.filter(item => item.id !== menuId);
             }
         },
-        RemoveNoodleOrder(state, action) {
+        ExistRemoveNoodleOrder(state, action) {
             const { orderId, noodleId } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
                 order.NoodleList = order.NoodleList.filter(item => item.id !== noodleId);
             }
         },
-        UpdateMenuOrder(state, action) {
+        ExistUpdateMenuOrder(state, action) {
             const { orderId, menuId, data } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
@@ -62,7 +62,7 @@ const orderSlice = createSlice({
                 }
             }
         },
-        UpdateNoodleOrder(state, action) {
+        ExistUpdateNoodleOrder(state, action) {
             const { orderId, noodleId, data } = action.payload;
             const order = state.createOrder.find(o => o.id === orderId);
             if (order) {
@@ -71,26 +71,19 @@ const orderSlice = createSlice({
                     Object.assign(noodleItem, data[0]);
                 }
             }
-        },
-        SetTable(state, action) {
-            const { orderId, table } = action.payload;
-            const order = state.createOrder.find(o => o.id === orderId);
-            if (order) {
-                order.TableList = table;
-            }
-        },
+        }
     },
 });
 
 export const {
-    CreateOrder,
-    AddMenuOrder,
-    AddNoodleOrder,
-    RemoveMenuOrder,
-    RemoveNoodleOrder,
-    UpdateMenuOrder,
-    UpdateNoodleOrder,
-    SetTable,
-} = orderSlice.actions;
+    ExistCreateOrder,
+    ExistAddMenuOrder,
+    ExistAddNoodleOrder,
+    ExistRemoveMenuOrder,
+    ExistRemoveNoodleOrder,
+    ExistUpdateMenuOrder,
+    ExistUpdateNoodleOrder
+   
+} = ExistorderSlice.actions;
 
-export default orderSlice.reducer;
+export default ExistorderSlice.reducer;

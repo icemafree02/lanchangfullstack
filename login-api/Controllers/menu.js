@@ -233,19 +233,12 @@ exports.getAssociation = async (req, res) => {
   try {
     const query = `
       SELECT 
-        order_detail.order_id, o.order_datetime , 
-        GROUP_CONCAT(
-          CASE 
-            WHEN menu.menu_name IS NOT NULL THEN menu.menu_name
-            ELSE CONCAT(
-              COALESCE(soup.soup_name, 'ไม่ระบุ'), ' ',
-              COALESCE(noodle_type.noodle_type_name, 'ไม่ระบุ'), ' ',
-              COALESCE(meat.meat_name, 'ไม่ระบุ'), ' ',
-              COALESCE(size.size_name, 'ไม่ระบุ')
-            )
-          END 
-          SEPARATOR ', '
-        ) AS items
+        order_detail.order_id, 
+        o.order_datetime, 
+        CASE 
+          WHEN menu.menu_id IS NOT NULL THEN menu.menu_name
+          ELSE "ก๋วยเตี๋ยว"
+        END AS item
       FROM order_detail 
       LEFT JOIN \`order\` AS o ON order_detail.order_id = o.order_id  
       LEFT JOIN menu ON order_detail.menu_id = menu.menu_id
@@ -253,49 +246,47 @@ exports.getAssociation = async (req, res) => {
       LEFT JOIN soup ON order_detail.soup_id = soup.soup_id
       LEFT JOIN meat ON order_detail.meat_id = meat.meat_id
       LEFT JOIN size ON order_detail.size_id = size.size_id
-      GROUP BY order_detail.order_id, o.order_datetime`;
+      ORDER BY order_detail.order_id, o.order_datetime
+    `;
 
     const [GetTransaction] = await connection.query(query);
 
     console.log("Query Result:", GetTransaction);
 
-    if (!GetTransaction || GetTransaction.length === 0) {
+    if (!GetTransaction) {
       return res.json({
-        success: false,
-        data: {
-          transactions: [],
-          totalTransactions: 0
-        }
+        transactions: [],
+        totalTransactions: 0
       });
     }
 
-    const transactions = GetTransaction.map(GetTransaction => {
-      const items = GetTransaction.items 
-        ? GetTransaction.items.split(',').map(item => item.trim()).filter(item => item !== '') 
-        : [];
-      return {
-        orderId: GetTransaction.order_id,
-        Date: GetTransaction.order_datetime,
-        items: items
-      };
-      
+    const GroupbyOrderId = new Map();
+    GetTransaction.forEach(({ order_id, order_datetime, item }) => {
+      if (!GroupbyOrderId.has(order_id)) {
+        GroupbyOrderId.set(order_id, {
+          orderId: order_id,
+          Date: order_datetime,
+          items: []
+        });
+      }
+      GroupbyOrderId.get(order_id).items.push(item);
     });
+
+    const transactions = Array.from(GroupbyOrderId.values());
 
     console.log('transactions: ', transactions);
 
     res.json({
-      success: true,
-      data: {
         transactions: transactions,
         totalTransactions: transactions.length
-      }
     });
 
   } catch (error) {
     console.error('Error in getAssociation:', error);
-    res.status(500).json();
+    res.status(500).json({ success: false, error: 'Internal Server Error' });
   }
 };
+
 
 
 

@@ -8,6 +8,7 @@ import lanchan from '../image/lanchan.png';
 import cart from '../image/cart.jpg';
 import { fetchMenuData, fetchMenuItemDetail } from '../slice/menuslice';
 import { setSelectedNoodle } from '../slice/noodleslice';
+import { setSelectedTable } from '../slice/tableslice';
 
 const MenuOrder = () => {
   const dispatch = useDispatch();
@@ -45,6 +46,22 @@ const MenuOrder = () => {
       console.error('Error fetching menu items:', error);
     }
   };
+
+  useEffect(() => {
+    const storedTable = sessionStorage.getItem('tableNumber');
+    console.log("Retrieved from sessionStorage:", storedTable);
+  
+    if (storedTable && Number(storedTable) !== selectedTable) {
+      dispatch(setSelectedTable(Number(storedTable)));
+      console.log("Updated Redux state with:", Number(storedTable));
+    }
+  }, [dispatch, selectedTable]);
+  
+
+  console.log("Current Redux state:", selectedTable);
+
+
+
 
   useEffect(() => {
     fetchInitialMenu();
@@ -203,7 +220,7 @@ const MenuOrder = () => {
               <input
                 className='label'
                 type="radio"
-                name="soupType" 
+                name="soupType"
                 value={soup.Soup_id}
                 checked={noodleOptions.soupType === soup.Soup_id}
                 onChange={(e) => handleNoodleOptionChange('soupType', soup.Soup_id)}
@@ -285,7 +302,7 @@ const MenuOrder = () => {
         };
         console.log(NoodleHeld);
         await dispatch(setSelectedNoodle(NoodleHeld));
-      
+
         navigate('/menu_order/noodle_detail');
       } else {
         alert('ไม่พบเมนูที่เลือก');

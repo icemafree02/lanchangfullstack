@@ -102,12 +102,16 @@ function Noodle({ onSelect }) {
   };
 
   const renderNoodle = () => (
-    <div className='noodlesearch'>
-      <div className="noodle-customization">
-
+    <div className='noodlesearch' style={{ display: 'flex', flexDirection: "column" }}>
+      <div className="noodle-customization" style={{ display: 'flex', flexDirection: "row", justifyContent: "space-around" }}>
         <div className='noodletype'>
           <div>เส้น</div>
           <select
+            style={{
+              padding: '3px',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
             value={noodleOptions.noodleType}
             onChange={(e) => {
               const NoodleTypeId = Number(e.target.value);
@@ -128,6 +132,11 @@ function Noodle({ onSelect }) {
         <div className='soup'>
           <div>น้ำซุป</div>
           <select
+            style={{
+              padding: '3px',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
             value={noodleOptions.soupType}
             onChange={(e) => {
               const SoupId = Number(e.target.value);
@@ -147,6 +156,11 @@ function Noodle({ onSelect }) {
         <div className='meat'>
           <div>เนื้อ</div>
           <select
+            style={{
+              padding: '3px',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
             value={noodleOptions.meatType}
             onChange={(e) => {
               const MeatId = Number(e.target.value);
@@ -166,9 +180,14 @@ function Noodle({ onSelect }) {
         <div className='size'>
           <div>ขนาด</div>
           <select
+            style={{
+              padding: '3px',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
             value={noodleOptions.size}
             onChange={(e) => {
-              const SizeId = Number(e.target.value); 
+              const SizeId = Number(e.target.value);
               handleNoodleOptionChange('size', SizeId);
               const selectedSize = size.find(s => s.Size_id === SizeId);
               if (selectedSize) {
@@ -181,38 +200,54 @@ function Noodle({ onSelect }) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: "center", padding: "15px 0px" }}>
+        <label style={{ fontSize: "13px", padding: "5px" }}>
+          จำนวน
+        </label>
+        <input
+
+          style={{
+            width: '10%', padding: '6px',
+            borderRadius: '4px',
+            border: '1px solid #ccc'
+          }}
+          type='number'
+          placeholder='จำนวน'
+          value={QTY}
+          onChange={(e) => setQTY(e.target.value)} />
 
 
-        <div >
-          <input
-            style={{ width: '10%' }}
-            type='number'
-            placeholder='จำนวน'
-            value={QTY}
-            onChange={(e) => setQTY(e.target.value)} />
-        </div>
-
-
-        <label style={{ marginLeft: '10px' }}>
+        <label style={{ padding: '5px', fontSize: "13px" }}>
           <input
             type="checkbox"
             checked={homeDelivery}
             onChange={(e) => setHomeDelivery(e.target.checked)}
           />
-          Take Home
+          รับกลับบ้าน
         </label>
+      </div>
 
-        <textarea
+
+
+      <div style={{ display: 'flex', justifyContent: "center" }}>
+        <textarea style={{
+          width: "70%", padding: '6px',
+          borderRadius: '4px',
+          border: '1px solid #ccc'
+        }}
           placeholder='เพิ่มเติม'
           value={additional}
           onChange={(e) => setAdditional(e.target.value)}
         />
       </div>
+
     </div>
   );
 
   return (
-    <div style={{ fontSize: '10px', backgroundColor: 'blue', padding: '10px' }}>{renderNoodle()}</div>
+    <div style={{ fontSize: '10px', padding: '10px' }}>{renderNoodle()}</div>
   );
 }
 

@@ -1187,24 +1187,23 @@ app.get('/getTopNoodleMenus', (req, res) => {
         mt.meat_name, ' ',        
         sz.size_name        
       ) AS menu_name,
-      SUM(order_detail.Order_detail_quantity) AS total_quantity
+      SUM(od.Order_detail_quantity) AS total_quantity
     FROM 
-      order_detail
+      order_detail od
+
     JOIN 
-      noodle_menu nm ON order_detail.Noodle_menu_id = nm.Noodle_menu_id
+      noodle_type nt ON od.Noodle_type_id = nt.noodle_type_id
     JOIN 
-      noodle_type nt ON nm.Noodle_type_id = nt.noodle_type_id
+      soup s ON od.Soup_id = s.soup_id
     JOIN 
-      soup s ON nm.Soup_id = s.soup_id
+      meat mt ON od.Meat_id = mt.meat_id
     JOIN 
-      meat mt ON nm.Meat_id = mt.meat_id
-    JOIN 
-      size sz ON nm.Size_id = sz.size_id
+      size sz ON od.Size_id = sz.size_id
     GROUP BY 
-      nm.Noodle_type_id,    
-      nm.Soup_id,          
-      nm.Meat_id,
-      nm.Size_id
+      od.Noodle_type_id,    
+      od.Soup_id,          
+      od.Meat_id,
+      od.Size_id
     ORDER BY 
       total_quantity DESC
     LIMIT 5;
@@ -1249,8 +1248,7 @@ app.get('/mostordernoodletype', (req, res) => {
       NT.NOODLE_TYPE_NAME as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN NOODLE_TYPE NT ON NM.NOODLE_TYPE_ID = NT.NOODLE_TYPE_ID
+    JOIN noodle_type NT ON od.Noodle_TYPE_id = Nt.NOODLE_TYPE_ID
     GROUP BY NT.NOODLE_TYPE_ID, NT.NOODLE_TYPE_NAME
     ORDER BY order_count DESC
     LIMIT 1;
@@ -1272,8 +1270,7 @@ app.get('/mostordersoup', (req, res) => {
       s.soup_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN soup s ON NM.NOODLE_TYPE_ID = s.soup_id
+    JOIN soup s ON od.soup_id = s.soup_id
     GROUP BY s.soup_id, s.soup_name
     ORDER BY order_count DESC
     LIMIT 1;
@@ -1294,8 +1291,7 @@ app.get('/allnoodletypes', (req, res) => {
       NT.NOODLE_TYPE_NAME as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN NOODLE_TYPE NT ON NM.NOODLE_TYPE_ID = NT.NOODLE_TYPE_ID
+    JOIN NOODLE_TYPE NT ON od.NOODLE_TYPE_ID = NT.NOODLE_TYPE_ID
     GROUP BY NT.NOODLE_TYPE_ID, NT.NOODLE_TYPE_NAME
     ORDER BY order_count DESC;
   `;
@@ -1317,8 +1313,7 @@ app.get('/allsoups', (req, res) => {
       s.soup_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN soup s ON NM.soup_id = s.soup_id
+    JOIN soup s ON od.soup_id = s.soup_id
     GROUP BY s.soup_id, s.soup_name
     ORDER BY order_count DESC;
   `;
@@ -1339,8 +1334,7 @@ app.get('/allmeats', (req, res) => {
       m.meat_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN meat m ON NM.meat_id = m.meat_id
+    JOIN meat m ON od.meat_id = m.meat_id
     GROUP BY m.meat_id, m.meat_name
     ORDER BY order_count DESC;
   `;
@@ -1360,8 +1354,7 @@ app.get('/allsizes', (req, res) => {
       s.size_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_menu NM ON od.Noodle_menu_id = NM.NOODLE_MENU_ID
-    JOIN size s ON NM.size_id = s.size_id
+    JOIN size s ON od.size_id = s.size_id
     GROUP BY s.size_id, s.size_name
     ORDER BY order_count DESC;
   `;

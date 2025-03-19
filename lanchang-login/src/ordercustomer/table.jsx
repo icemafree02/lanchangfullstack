@@ -9,7 +9,7 @@ function fetchTable() {
       return response.json();
     })
     .catch(error => {
-      console.error('Failed to fetch Table', error);
+      console.error('failed to fetch Table', error);
       return [];
     });
 }
@@ -25,14 +25,32 @@ function Table({ onSelect }) {
   }, []);
 
   useEffect(() => {
-    onSelect(SelectedTable)
+    if (SelectedTable) {
+      onSelect(SelectedTable);
+    }
   }, [SelectedTable]);
 
+
   return (
-    <div style={{ backgroundColor: 'gray', justifyContent: 'center', display: 'flex', fontSize: '20px' }}>
-      <select value={SelectedTable} onChange={(e) => setSelectedTable(e.target.value)}>
+    <div style={{ justifyContent: 'left', display: 'flex', fontSize: '20px', padding: "10px 0px" }}>
+      <select
+        value={SelectedTable}
+        onChange={(e) => {
+          const selectedTable = e.target.value;
+          setSelectedTable(selectedTable);
+        }}
+        style={{
+          padding: '8px',
+          borderRadius: '4px',
+          border: '1px solid #ccc',
+        }}
+      >
         {Table.map((table) => (
-          <option key={table.tables_id} value={table.tables_id}>
+          <option
+            key={table.tables_id}
+            value={table.tables_id}
+            disabled={table.status_id === 2}
+          >
             โต๊ะที่ {table.tables_number}
           </option>
         ))}

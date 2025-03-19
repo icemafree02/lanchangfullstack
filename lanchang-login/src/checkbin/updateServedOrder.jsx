@@ -164,7 +164,6 @@ function OrderDisplay() {
         return order;
       }).filter(order => order.details.length > 0));
 
-      // Reset checkbox states
       setCheckedItems(prev => ({
         ...prev,
         [orderId]: {}

@@ -11,38 +11,37 @@ class Apriori {
     this.lift = lift;
     this.rules = [];
   }
-
   generateFrequentItemsets() {
     const items = new Set();
     console.log(this.transactions);
     this.transactions.forEach(transaction => {
       transaction.forEach(item => items.add(item));
     });
-   // console.log(items);
+    // console.log(items);
     const frequentItems = {};
-    
+
     for (const item of items) {
-     // console.log(item);
+      // console.log(item);
       const support = this.calculateSupport([item]);
       if (support >= this.minSupport) {
         frequentItems[JSON.stringify([item])] = support;
-    //    console.log(frequentItems);
+        //    console.log(frequentItems);
       }
     }
-    
-   // console.log(frequentItems);
+
+    // console.log(frequentItems);
     return frequentItems;
   }
 
   calculateSupport(itemset) {
-  //  console.log(itemset);
+    //  console.log(itemset);
     let count = 0;
     for (const transaction of this.transactions) {
       if (itemset.every(item => transaction.includes(item))) {
         count++;
       }
     }
-    
+
     return count / this.transactions.length;
   }
   // run Apriori
@@ -84,7 +83,7 @@ class Apriori {
 
         //เช็คว่าค่าตรงกันมั้ย
         let join = true;
-        console.log(k-2);
+        console.log(k - 2);
         for (let l = 0; l < k - 2; l++) {
           console.log(l);
           console.log(itemset1[l])
@@ -95,7 +94,7 @@ class Apriori {
             break;
           }
         }
-        console.log(itemset1[k - 2] , itemset2[k - 2]);
+        console.log(itemset1[k - 2], itemset2[k - 2]);
 
         if (join && itemset1[k - 2] < itemset2[k - 2]) {
           const newItemset = [...itemset1.slice(0, k - 1), itemset2[k - 2]];
@@ -134,7 +133,7 @@ class Apriori {
         if (firstitem.length > 0 && seconditem.length > 0) {
           const confidence = this.itemsets[item] / this.calculateSupport(firstitem);
           const lift = this.itemsets[item] / (this.calculateSupport(firstitem) * this.calculateSupport(seconditem));
-          if (confidence >= this.minConfidence && lift ) {
+          if (confidence >= this.minConfidence && lift) {
             this.rules.push({
               firstitem,
               seconditem,
@@ -147,21 +146,22 @@ class Apriori {
       }
     }
 
-    // Sort rules by confidence (descending)
+    //กรองค่าคอนฟิเด้นจากน้อยไปมาก
     this.rules.sort((a, b) => b.confidence - a.confidence);
   }
 }
 
-// React component for displaying association rules
 const Association = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [minSupport, setMinSupport] = useState(0.02);
   const [minConfidence, setMinConfidence] = useState(0.5);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [error, setError] = useState(null);
 
-  // Fetch transaction data from your backend
   const fetchTransactions = async () => {
     try {
       setLoading(true);
@@ -170,17 +170,9 @@ const Association = () => {
       const response = await fetch('http://localhost:3333/association');
       const data = await response.json();
 
-      if (data.success) {
-        const transactionItems = data.data.transactions.map(t => t.items);
-        setTransactions(transactionItems);
-
-        // Run Apriori on the transaction data
-        if (transactionItems.length > 0) {
-          console.log(transactionItems);
-          const apriori = new Apriori(transactionItems, minSupport, minConfidence);
-          const result = apriori.run();
-          setRules(result.rules);
-        }
+      if (data) {
+        setAllTransactions(data.transactions);
+        setFilteredTransactions(data.transactions);
       } else {
         setError(data.error || 'Failed to retrieve transaction data');
       }
@@ -195,9 +187,36 @@ const Association = () => {
     fetchTransactions();
   }, []);
 
-  const handleRunAnalysis = () => {
-    if (transactions.length > 0) {
-      const apriori = new Apriori(transactions, minSupport, minConfidence);
+  const filterTransactionsDate = () => {
+    let filtered = [...allTransactions];
+
+    if (startDate) {
+      filtered = filtered.filter(transaction =>
+        new Date(transaction.Date) >= new Date(startDate)
+      );
+    }
+
+    if (endDate) {
+      filtered = filtered.filter(transaction =>
+        new Date(transaction.Date) <= new Date(endDate)
+      );
+    }
+
+    setFilteredTransactions(filtered);
+    if (filtered) {
+      const transactionItems = filtered.map(t => t.items);
+      const apriori = new Apriori(transactionItems, minSupport, minConfidence);
+      const result = apriori.run();
+      setRules(result.rules);
+    } else {
+      setRules([]);
+    }
+  };
+
+  const RunAnalysis = () => {
+    if (filteredTransactions.length > 0) {
+      const transactionItems = filteredTransactions.map(t => t.items);
+      const apriori = new Apriori(transactionItems, minSupport, minConfidence);
       const result = apriori.run();
       setRules(result.rules);
     }
@@ -216,11 +235,28 @@ const Association = () => {
           </div>
         )}
 
-        {/* Controls Section */}
         <div className="controls-container">
           <div className="controls-grid">
+            <div className="control-item">
+              <label>วันที่เริ่มต้น:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
+            <div className="control-item">
+              <label>วันที่สิ้นสุด:</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
 
-            {/* Minimum Support */}
+    
             <div className="control-item">
               <label>
                 Minimum Support ({(minSupport * 100).toFixed(1)}%)
@@ -228,17 +264,16 @@ const Association = () => {
               <input
                 type="range"
                 min="0.01"
-                max="0.5"
+                max="1"
                 step="0.01"
                 value={minSupport}
                 onChange={(e) => setMinSupport(parseFloat(e.target.value))}
               />
               <p className="helper-text">
-                สินค้าต้องปรากฏอย่างน้อย {(minSupport * 100).toFixed(1)}% ของออเดอร์ทั้งหมด
+                เมนูต้องปรากฏอย่างน้อย {(minSupport * 100).toFixed(1)}% ของออเดอร์ทั้งหมด
               </p>
             </div>
 
-            {/* Minimum Confidence */}
             <div className="control-item">
               <label>
                 Minimum Confidence ({(minConfidence * 100).toFixed(1)}%)
@@ -247,7 +282,7 @@ const Association = () => {
                 type="range"
                 min="0.1"
                 max="1"
-                step="0.05"
+                step="0.01"
                 value={minConfidence}
                 onChange={(e) => setMinConfidence(parseFloat(e.target.value))}
               />
@@ -259,16 +294,19 @@ const Association = () => {
 
           <div className="button-container">
             <button
-              onClick={handleRunAnalysis}
-              disabled={loading || transactions.length === 0}
-              className={`button ${loading || transactions.length === 0 ? "disabled" : "primary"}`}
-            >
-              {loading ? "กำลังประมวลผล" : "วิเคราะห์ข้อมูล"}
+              onClick={filterTransactionsDate}
+              style={{color:'white',backgroundColor:'#007bff',border:'none',padding:'10px',cursor:'pointer'}}
+            >กรองข้อมูล
+            </button>
+            <button
+              onClick={RunAnalysis}
+              style={{color:'white',backgroundColor:'darkgreen',border:'none',padding:'10px',cursor:'pointer'}}
+            >วิเคราะห์ความสัมพันธ์
             </button>
           </div>
 
           <div className="transaction-count">
-            ข้อมูลทั้งหมด: {transactions.length} รายการ
+            ข้อมูลทั้งหมด: {allTransactions.length} ออเดอร์ | หลังกรอง: {filteredTransactions.length} ออเดอร์
           </div>
         </div>
 
@@ -277,8 +315,8 @@ const Association = () => {
 
           {rules.length === 0 ? (
             <p className="rules-empty">
-              {transactions.length === 0
-                ? "ยังไม่มีข้อมูลธุรกรรม"
+              {filteredTransactions.length === 0
+                ? "ยังไม่มีข้อมูลธุรกรรมหลังการกรอง"
                 : "ไม่พบกฎความสัมพันธ์ที่ตรงตามเงื่อนไข"}
             </p>
           ) : (
@@ -317,7 +355,6 @@ const Association = () => {
       </div>
     </div>
   );
-
 };
 
 export default Association;

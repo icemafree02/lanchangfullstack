@@ -1,11 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
+const initialOrderId = sessionStorage.getItem('orderId') ? Number(sessionStorage.getItem('orderId')) : null;
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
     items: [],
     orderedItems: [],
-    orderId: null,
+    orderId: initialOrderId,
   },
   reducers: {
     addItemToCart: (state, action) => {
@@ -24,7 +25,7 @@ const cartSlice = createSlice({
         );
       } else if (newItem.type === 'menu') {
         existingItem = state.items.find(item =>
-          item.id === newItem.id && 
+          item.id === newItem.id &&
           item.type === newItem.type &&
           item.homeDelivery === newItem.homeDelivery &&
           item.additionalInfo === newItem.additionalInfo
@@ -80,6 +81,7 @@ const cartSlice = createSlice({
     },
     setOrderId: (state, action) => {
       state.orderId = action.payload;
+      sessionStorage.setItem('orderId', action.payload.toString()); // ✅ Store in sessionStorage
     },
     clearCart: (state) => {
       state.orderedItems = [...state.items];

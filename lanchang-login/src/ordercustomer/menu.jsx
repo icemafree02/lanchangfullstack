@@ -58,72 +58,95 @@ function Menu({ onSelect }) {
     });
 
     return (
-        <div style={{ backgroundColor: 'white', padding: '10px' }}>
-            <input
-                type="text"
-                value={searchMenu}
-                placeholder="ค้นหาเมนู"
-                onChange={search}
-                onFocus={() => setDropdown(true)}
-            />
-
-            {dropdown && searchMenu && (
-                <div
-                    style={{
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
+        <div style={{ display: 'flex', flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ justifyContent: "center", display: "flex" }}>
+                <div style={{ padding: "5px", flexDirection: "column", display: "flex" }}>
+                    <input style={{
+                        width: "100%",
+                        padding: '8px',
                         borderRadius: '4px',
-                        width: '100%',
-                        cursor: 'pointer',
-                        padding: '5px'
+                        border: '1px solid #ccc'
                     }}
-                >
-                    {menuList.length > 0 ? (
-                        menuList.map((item) => (
-                            <div
-                                key={item.Menu_id}
-                                onClick={() => {
-                                    selectItem(item.Menu_name)
-                                    setMenuId(item.Menu_id)
-                                    setPrice(item.Menu_price)
-                                }}
-                                onMouseDown={(e) => e.preventDefault()}
-                            >
-                                {item.Menu_name}
-                            </div>
+                        type="text"
+                        value={searchMenu}
+                        placeholder="ค้นหาเมนู"
+                        onChange={search}
+                        onFocus={() => setDropdown(true)}
+                    />
 
-                        ))
-                    ) : (
-                        <div>ไม่พบเมนู</div>
+                    {dropdown && searchMenu && (
+                        <div
+                            style={{
+                                backgroundColor: 'white',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                width: '100%',
+                                cursor: 'pointer',
+                                padding: '5px',
+                                display: 'flex',
+                                flexDirection: "column"
+                            }}
+                        >
+                            {menuList.length > 0 ? (
+                                menuList.map((item) => (
+                                    <div
+                                        key={item.Menu_id}
+                                        onClick={() => {
+                                            selectItem(item.Menu_name)
+                                            setMenuId(item.Menu_id)
+                                            setPrice(item.Menu_price)
+                                        }}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                    >
+                                        {item.Menu_name}
+                                    </div>
+
+                                ))
+                            ) : (
+                                <div>ไม่พบเมนู</div>
+                            )}
+                        </div>
                     )}
                 </div>
-            )
-            }
-
-            <div>
-                <input
-                    style={{ width: '15%' }}
-                    type="number"
-                    placeholder="จำนวน"
-                    value={qty}
-                    onChange={(e) => setQty(e.target.value)}
-                />
             </div>
 
-            <label style={{ marginLeft: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: "center", padding: "15px 0px" }}>
+                <label style={{ fontSize: "13px", padding: "5px" }}>
+                    จำนวน
+                </label>
                 <input
-                    type="checkbox"
-                    checked={homeDelivery}
-                    onChange={(e) => setHomeDelivery(e.target.checked)}
-                />
-                Take Home
-            </label>
+                    style={{
+                        width: '10%', padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ccc'
+                    }}
+                    type='number'
+                    placeholder='จำนวน'
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)} />
 
-            <textarea
-                placeholder="เพิ่มเติม"
-                value={additional}
-                onChange={(e) => setAdditional(e.target.value)}
-            />
+
+                <label style={{ padding: '5px', fontSize: "13px" }}>
+                    <input
+                        type="checkbox"
+                        checked={homeDelivery}
+                        onChange={(e) => setHomeDelivery(e.target.checked)}
+                    />
+                    รับกลับบ้าน
+                </label>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: "center", paddingBottom: "10px" }}>
+                <textarea style={{
+                    width: "70%", padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc'
+                }}
+                    placeholder='เพิ่มเติม'
+                    value={additional}
+                    onChange={(e) => setAdditional(e.target.value)}
+                />
+            </div>
         </div >
     );
 }

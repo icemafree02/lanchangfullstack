@@ -3,19 +3,28 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { increaseQuantity, decreaseQuantity, removeItemFromCart, clearCart } from '../slice/cartslice';
 import '../cart.css';
-import noodle from '../image/noodle.png'; 
+import noodle from '../image/noodle.png';
+import { setOrderId } from '../slice/cartslice';
 
 const Cart = () => {
-
-  useEffect(() => {
-    console.log(cartItems);
-   });
-
   const cartItems = useSelector(state => state.cart.items);
   const selectedTable = useSelector(state => state.table.selectedTable);
   const orderId = useSelector(state => state.cart.orderId);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log(cartItems);
+  });
+
+  useEffect(() => {
+    const storedOrderId = sessionStorage.getItem('orderId'); // ✅ Use sessionStorage instead
+    if (storedOrderId) {
+      dispatch(setOrderId(Number(storedOrderId)));
+    }
+    console.log("Current tab orderId:", storedOrderId);
+  }, [dispatch]);
+
 
   const handleIncrease = (item) => {
     dispatch(increaseQuantity({
@@ -54,17 +63,16 @@ const Cart = () => {
 
   const getImageSource = (item) => {
     if (item.type === 'noodle') {
-      return noodle; 
+      return noodle;
     } else if (item.type === 'menu') {
       return `http://localhost:3333/menuimage/${item.id}`;
     }
     return '';
-};
+  };
 
   const handleOrderMenu = async () => {
-    const confirm = window.confirm('ยืนยันการสั่งอาหารหรือไม่')
     try {
-      if (confirm) {
+      
         const url = `http://localhost:3333/orders/${orderId}/add_items`;
         const response = await fetch(url, {
           method: 'PUT',
@@ -85,8 +93,8 @@ const Cart = () => {
         const result = await response.json();
         dispatch(clearCart());
         navigate('/menu_order/cart/menu_ordered');
-      }
-    } 
+      
+    }
     catch (error) {
       console.error('Error processing order:', error);
       alert('Failed to process order. Please try again.');

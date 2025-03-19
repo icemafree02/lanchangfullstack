@@ -1,24 +1,45 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage for web
-import orderReducer from '../slice/orderslice'
+import storage from 'redux-persist/lib/storage'; 
+import orderReducer from '../slice/orderslice'; 
+import existOrderReducer from '../slice/existorderslice'; 
+
+
 const persistConfig = {
-    key: 'root',
-    storage,
+  key: 'root',
+  storage,
 };
 
-const persistedReducer = persistReducer(persistConfig, orderReducer);
+
+const orderPersistConfig = {
+  key: 'orders',
+  storage,
+};
+
+const existOrderPersistConfig = {
+  key: 'existorders',
+  storage,
+};
+
+
+const persistedOrderReducer = persistReducer(orderPersistConfig, orderReducer);
+const persistedExistOrderReducer = persistReducer(existOrderPersistConfig, existOrderReducer);
+
+
+const rootReducer = combineReducers({
+  orders: persistedOrderReducer,
+  existorders: persistedExistOrderReducer,
+});
+
 
 export const store = configureStore({
-    reducer: {
-        orders: persistedReducer,
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-            },
-        }),
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }),
 });
 
 export const persistor = persistStore(store);
