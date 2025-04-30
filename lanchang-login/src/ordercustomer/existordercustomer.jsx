@@ -25,7 +25,7 @@ const Existordercustomer = () => {
     useEffect(() => {
         const fetchExistOrders = async () => {
             try {
-                const response = await fetch('http://localhost:3333/getorders');
+                const response = await fetch('https://lanchangbackend-production.up.railway.app/getorders');
                 if (!response.ok) throw new Error('Failed to fetch orders');
 
                 const data = await response.json();
@@ -36,6 +36,7 @@ const Existordercustomer = () => {
         };
 
         fetchExistOrders();
+        
     }, []);
 
 
@@ -104,10 +105,11 @@ const Existordercustomer = () => {
         if (!confirm) return;
 
         try {
+            
             const items = [
                 ...MenuList.map(item => {
                     return {
-                        id: item.MenuId,
+                        menuId: item.MenuId,
                         type: "menu",
                         quantity: parseInt(item.Qty),
                         price: item.Price,
@@ -120,7 +122,7 @@ const Existordercustomer = () => {
                         throw new Error('Missing NoodleComponent');
                     }
                     return {
-                        id: {
+                        noodleDetails: {
                             Noodle_type_id: item.NoodleComponent.noodleType,
                             Soup_id: item.NoodleComponent.soupType,
                             Meat_id: item.NoodleComponent.meatType,
@@ -135,7 +137,7 @@ const Existordercustomer = () => {
                 }),
             ];
 
-            const response = await fetch(`http://localhost:3333/orders/${selectedOrder}/add_items`, {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/orders/${selectedOrder}/add_items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cartItems: items }),

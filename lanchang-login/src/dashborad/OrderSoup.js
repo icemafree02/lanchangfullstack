@@ -7,16 +7,58 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-export default function SoupStats() {
+export default function SoupStats({startDate, endDate }) {
     const [stats, setStats] = useState([]);
 
     useEffect(() => {
-        fetch('http://localhost:3333/allsoups')
+        fetchSoupStats();
+    }, [startDate, endDate]);
+
+    const getDateRangeText = () => {
+        if (!startDate && !endDate) return "ทุกช่วงเวลา";
+        if (startDate && !endDate) {
+          const formattedDate = new Date(startDate).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          return `ตั้งแต่วันที่ ${formattedDate}`;
+        }
+        if (!startDate && endDate) {
+          const formattedDate = new Date(endDate).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          return `จนถึงวันที่ ${formattedDate}`;
+        }
+        
+        const startFormatted = new Date(startDate).toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        
+        const endFormatted = new Date(endDate).toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        
+        return `${startFormatted} - ${endFormatted}`;
+      };
+
+    const fetchSoupStats = () => {
+        const queryParams = new URLSearchParams();
+        if (startDate) queryParams.append('startDate', startDate);
+        if (endDate) queryParams.append('endDate', endDate);
+        fetch(`https://lanchangbackend-production.up.railway.app/allsoups?${queryParams.toString()}`)
             .then(response => response.json())
             .then(data => setStats(data))
             .catch(error => console.error('Error fetching soups:', error));
-    }, []);
+    }
     const total = stats.reduce((sum, item) => sum + item.order_count, 0);
+
     return (
         <Container maxWidth="sm">
             <Box sx={{ height: '250px', textAlign: 'center' }}>
@@ -46,11 +88,7 @@ export default function SoupStats() {
 
             <Box sx={{ mt: 11 }}>
                 <Typography color="text.secondary" sx={{ fontSize: 13, textAlign: 'center' }}>
-                    อัปเดตเมื่อวันที่ {new Date().toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                    })}
+                    {getDateRangeText()}
                 </Typography>
             </Box>
 

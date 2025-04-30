@@ -12,7 +12,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
 import { red } from '@mui/material/colors';
-import noodle from '../assets/images/noodle.png';
+import noodlepic from '../assets/images/noodle.jpg';
 
 const styles = {
     historyDetailPage: {
@@ -97,7 +97,7 @@ function HistoryDetail() {
 
     const fetchOrder = async () => {
         try {
-            const response = await fetch('http://localhost:3333/getorders');
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/getorders');
             if (response) {
                 const data = await response.json();
                 setOrder(data);
@@ -111,7 +111,7 @@ function HistoryDetail() {
 
     const fetchOrderDetails = async () => {
         try {
-            const response = await fetch(`http://localhost:3333/getorderdetail/${id}`);
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${id}`);
             if (!response.ok) throw new Error('Failed to fetch order details');
             const data = await response.json();
             setOrderDetails(data);
@@ -123,18 +123,18 @@ function HistoryDetail() {
     const fetchAllData = async () => {
         try {
             const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-                fetch('http://localhost:3333/soups'),
-                fetch('http://localhost:3333/sizes'),
-                fetch('http://localhost:3333/meats'),
-                fetch('http://localhost:3333/noodletypes')
-            
+                fetch('https://lanchangbackend-production.up.railway.app/soups'),
+                fetch('https://lanchangbackend-production.up.railway.app/sizes'),
+                fetch('https://lanchangbackend-production.up.railway.app/meats'),
+                fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+
             ]);
             const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
                 soupRes.json(),
                 sizeRes.json(),
                 meatRes.json(),
                 noodleTypeRes.json()
-               
+
             ]);
             setSoups(soupData);
             setSizes(sizeData);
@@ -174,26 +174,26 @@ function HistoryDetail() {
         const size_name = getSizeName(orderDetail.Size_id);
         return `${noodle_type_name} ${soup_name} ${meat_name} (${size_name})`;
     }
-    
+
     const fetchMenus = async () => {
         try {
-            const otherRes = await fetch('http://localhost:3333/getmenu');
+            const otherRes = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
             const otherData = await otherRes.json();
             setOtherMenu(otherData);
         } catch (error) {
             console.error('Error fetching menus:', error);
         }
     };
-    
+
     const getItemDetails = (orderDetail) => {
-        if (orderDetail.Noodle_type_id && orderDetail.Soup_id && 
+        if (orderDetail.Noodle_type_id && orderDetail.Soup_id &&
             orderDetail.Meat_id && orderDetail.Size_id) {
             return {
                 name: getMenuName(orderDetail),
                 price: orderDetail.Price || 0,
-                image: noodle
+                image: noodlepic
             };
-        } 
+        }
         // For standard menu items
         else if (orderDetail.Menu_id) {
             const other = otherMenu.find(o => o.Menu_id === orderDetail.Menu_id);
@@ -225,9 +225,14 @@ function HistoryDetail() {
                     return itemDetails ? (
                         <Paper key={item.Order_detail_id} style={styles.menuItem}>
                             <img
-                                src={`data:image/jpeg;base64,${itemDetails.image}`}
+                                src={
+                                    item.Menu_id
+                                        ? `data:image/jpeg;base64,${itemDetails.image}`
+                                        : itemDetails.image 
+                                }
                                 style={styles.menuImage}
                             />
+
                             <div style={styles.menuInfo}>
                                 <h3 style={styles.menuInfoH3}>{itemDetails.name}</h3>
                                 <p style={styles.menuInfoP}>จำนวน: {item.Order_detail_quantity}</p>

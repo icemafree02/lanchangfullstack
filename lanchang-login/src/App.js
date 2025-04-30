@@ -11,6 +11,8 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import YourLogo from './assets/images/lanchan.png';
+import { useNavigate } from 'react-router-dom';
+
 
 function Copyright(props) {
   return (
@@ -29,7 +31,9 @@ function Copyright(props) {
 
 const defaultTheme = createTheme();
 
+
 export default function SignInSide() {
+  const navigate = useNavigate();
  
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -41,7 +45,7 @@ export default function SignInSide() {
     
     console.log('Sending login request with data:', jsonData);
   
-    fetch('http://localhost:3333/login', {
+    fetch('https://lanchangbackend-production.up.railway.app/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,9 +63,11 @@ export default function SignInSide() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('role', data.role)
         if (data.role === 'owner') {
-          window.location = 'ownerpage'
+          navigate('/ownerpage');
+        } else if (data.role === 'manager') {
+          navigate('/firstpage');
         } else {
-          window.location = '/firstpageem'
+          navigate('/firstpageem');
         }
       } else {
         console.log('Login failed:', data.message);

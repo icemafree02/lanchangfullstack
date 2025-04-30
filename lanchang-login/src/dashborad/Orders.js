@@ -6,13 +6,19 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Title from './Title';
 
-export default function Orders() {
+export default function Orders({  startDate, endDate }) {
   const [topMenus, setTopMenus] = React.useState([]);
 
   React.useEffect(() => {
-    const fetchTopMenus = async () => {
+    fetchTopMenus();
+  }, [startDate, endDate]);
+
+  const fetchTopMenus = async () => {
       try {
-        const response = await fetch('http://localhost:3333/getTopOrderedMenus');
+        const queryParams = new URLSearchParams();
+        if (startDate) queryParams.append('startDate', startDate);
+        if (endDate) queryParams.append('endDate', endDate);
+        const response = await fetch(`https://lanchangbackend-production.up.railway.app/getTopOrderedMenus?${queryParams.toString()}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -22,9 +28,6 @@ export default function Orders() {
         console.error('Error fetching top menus:', error);
       }
     };
-
-    fetchTopMenus();
-  }, []);
 
   return (
     <React.Fragment>

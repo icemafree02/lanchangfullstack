@@ -1,3 +1,4 @@
+require('dotenv').config();
 var express = require('express');
 var cors = require('cors');
 var app = express();
@@ -9,20 +10,26 @@ var { readdirSync } = require('fs');
 var morgan = require('morgan');
 const secret = 'fullstack-login-lanchan';
 
+const corsOptions = {
+  origin: '*', // Replace with your frontend URLs
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+  credentials: true
+};
+
 app.use(express.static('public'));
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const mysql = require('mysql2');
 
-const connectdatabase = 'mydb';
+const urlDB = `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 
 // สร้างการเชื่อมต่อฐานข้อมูล (แนะนำให้แยกไฟล์ config สำหรับข้อมูลฐานข้อมูล)
-const connection = mysql.createConnection({
-  host: 'localhost',
+const connection = mysql.createConnection({host: 'localhost',
   user: 'root',
-  database: connectdatabase,
-});
+  password: '',
+  database: 'project'});
 
 readdirSync('./Routes').map((file) => {
   const routePath = path.join(__dirname, 'Routes', file);
@@ -63,7 +70,7 @@ app.post('/login', jsonParser, (req, res) => {
   const { email, Password } = req.body;
 
   if (!email || !Password) {
-    return res.json({ status: 'error', message: 'Email and password are required' });
+    return res.status(400).json({ status: 'error', message: 'Email and password are required' });
   }
 
   connection.execute(
@@ -71,19 +78,35 @@ app.post('/login', jsonParser, (req, res) => {
     [email],
     (err, users) => {
       if (err) {
-        return res.json({ status: 'error', message: 'Database error', detail: err });
+        return res.status(500).json({ status: 'error', message: 'Database error', detail: err });
       }
       if (users.length === 0) {
-        return res.json({ status: 'error', message: 'User not found' });
+        return res.status(401).json({ status: 'error', message: 'User not found' });
       }
       const user = users[0];
 
-      // ตรวจสอบรหัสผ่าน
+      // ในระบบจริงควรใช้ bcrypt ในการเปรียบเทียบรหัสผ่าน
       if (user.Password === Password) {
-        var token = jwt.sign({ email: user.email, role: user.R_Name }, secret, { expiresIn: '1h' });
-        return res.json({ status: 'ok', message: 'Login success', token, role: user.R_Name });
+        // สร้าง token กำหนดค่าอายุ 1 ชั่วโมง
+        const token = jwt.sign(
+          { userId: user.id, email: user.email, role: user.R_Name },
+          secret,
+          { expiresIn: '1h' }
+        );
+        
+        return res.json({ 
+          status: 'ok', 
+          message: 'Login success', 
+          token, 
+          role: user.R_Name,
+          // ไม่ส่งข้อมูลที่ละเอียดอ่อน
+          user: {
+            email: user.email,
+            role: user.R_Name
+          }
+        });
       } else {
-        return res.json({ status: 'error', message: 'Incorrect password' });
+        return res.status(401).json({ status: 'error', message: 'Incorrect password' });
       }
     }
   );
@@ -91,14 +114,78 @@ app.post('/login', jsonParser, (req, res) => {
 
 app.post('/authen', jsonParser, (req, res) => {
   try {
+    // ตรวจสอบว่ามี Authorization header หรือไม่
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+      return res.status(401).json({ status: 'error', message: 'No token provided' });
+    }
+
     const token = req.headers.authorization.split(' ')[1];
-    var decoded = jwt.verify(token, secret);
-    res.json({ status: 'ok', decoded });
+    
+    // ตรวจสอบ token ด้วย jwt
+    const decoded = jwt.verify(token, secret);
+    
+    // ตรวจสอบข้อมูลผู้ใช้ในฐานข้อมูลเพื่อความแน่ใจ
+    connection.execute(
+      'SELECT * FROM role WHERE email = ?',
+      [decoded.email],
+      (err, users) => {
+        if (err) {
+          return res.status(500).json({ status: 'error', message: 'Database error' });
+        }
+        if (users.length === 0) {
+          return res.status(401).json({ status: 'error', message: 'User not found' });
+        }
+        
+        // ส่งข้อมูลผู้ใช้กลับไป (ไม่รวมข้อมูลที่ละเอียดอ่อน)
+        res.json({ 
+          status: 'ok', 
+          decoded: {
+            email: decoded.email,
+            role: decoded.role,
+            exp: decoded.exp
+          }
+        });
+      }
+    );
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    // ใช้ status code 401 สำหรับ Unauthorized
+    res.status(401).json({ status: 'error', message: err.message });
   }
 });
 
+
+const authenticateToken = (req, res, next) => {
+  try {
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+      return res.status(401).json({ status: 'error', message: 'No token provided' });
+    }
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decoded = jwt.verify(token, secret);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
+  }
+};
+
+const authorizeRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ status: 'error', message: 'Not authenticated' });
+    }
+    
+    if (allowedRoles.includes(req.user.role)) {
+      next();
+    } else {
+      return res.status(403).json({ status: 'error', message: 'Access denied' });
+    }
+  };
+};
+
+app.get('/protected-route', authenticateToken, authorizeRole(['owner', 'manager']), (req, res) => {
+  res.json({ status: 'ok', message: 'Access granted', data: 'This is protected data' });
+});
 
 app.post('/addmenu', upload.single('Menu_picture'), (req, res) => {
   const { Menu_name, Menu_price, Menu_category } = req.body;
@@ -487,29 +574,28 @@ app.delete('/deletenoodlemenu/:id', (req, res) => {
 // });
 
 
+app.post('/addnoodletype', jsonParser, (req, res) => {
+  const { noodletypename, noodletypeprice } = req.body;
 
-app.post('/addnoodle', jsonParser, (req, res) => {
-  const { noodlename } = req.body;
-
-  if (!noodlename) {
+  if (!noodletypename) {
     return res.status(400).json({ status: 'error', message: 'noodle name is required' });
   }
 
   const checkDuplicateQuery = 'SELECT * FROM noodle_type WHERE Noodle_type_name = ?';
 
-  connection.query(checkDuplicateQuery, [noodlename], (checkErr, checkResults) => {
+  connection.query(checkDuplicateQuery, [noodletypename], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Error checking for duplicate noodle:', checkErr);
       return res.status(500).json({ status: 'error', message: 'An error occurred while checking for duplicate noodle' });
     }
 
     if (checkResults.length > 0) {
-      return res.status(409).json({ status: 'duplicate', message: 'This meat type already exists' });
+      return res.status(409).json({ status: 'duplicate', message: 'This noodle type already exists' });
     }
 
-    const insertQuery = 'INSERT INTO noodle_type (Noodle_type_name) VALUES (?)';
+    const insertQuery = 'INSERT INTO noodle_type (Noodle_type_name, Noodle_type_price) VALUES (?, ?)';
 
-    connection.query(insertQuery, [noodlename], (insertErr, insertResults) => {
+    connection.query(insertQuery, [noodletypename, noodletypeprice], (insertErr, insertResults) => {
       if (insertErr) {
         console.error('Error adding noodle:', insertErr);
         return res.status(500).json({ status: 'error', message: 'An error occurred while adding the noodle' });
@@ -519,8 +605,9 @@ app.post('/addnoodle', jsonParser, (req, res) => {
     });
   });
 });
+
 app.post('/addmeat', jsonParser, (req, res) => {
-  const { meat } = req.body;
+  const { meat, meatprice } = req.body;
 
   if (!meat) {
     return res.status(400).json({ status: 'error', message: 'Meat name is required' });
@@ -538,9 +625,9 @@ app.post('/addmeat', jsonParser, (req, res) => {
       return res.status(409).json({ status: 'duplicate', message: 'This meat type already exists' });
     }
 
-    const insertQuery = 'INSERT INTO meat (Meat_name) VALUES (?)';
+    const insertQuery = 'INSERT INTO meat (Meat_name, Meat_price) VALUES (?,?)';
 
-    connection.query(insertQuery, [meat], (insertErr, insertResults) => {
+    connection.query(insertQuery, [meat, meatprice], (insertErr, insertResults) => {
       if (insertErr) {
         console.error('Error adding meat:', insertErr);
         return res.status(500).json({ status: 'error', message: 'An error occurred while adding the meat' });
@@ -550,8 +637,9 @@ app.post('/addmeat', jsonParser, (req, res) => {
     });
   });
 });
+
 app.post('/addsize', (req, res) => {
-  const { size } = req.body;
+  const { size, sizeprice } = req.body;
 
   if (!size) {
     return res.status(400).json({ status: 'error', message: 'Size is required' });
@@ -569,9 +657,9 @@ app.post('/addsize', (req, res) => {
       return res.status(409).json({ status: 'duplicate', message: 'This size already exists' });
     }
 
-    const insertQuery = 'INSERT INTO size (Size_name) VALUES (?)';
+    const insertQuery = 'INSERT INTO size (Size_name, Size_price) VALUES (?,?)';
 
-    connection.query(insertQuery, [size], (insertErr, insertResults) => {
+    connection.query(insertQuery, [size, sizeprice], (insertErr, insertResults) => {
       if (insertErr) {
         console.error('Error adding size:', insertErr);
         return res.status(500).json({ status: 'error', message: 'An error occurred while adding the size' });
@@ -583,7 +671,7 @@ app.post('/addsize', (req, res) => {
 });
 
 app.post('/addsoup', jsonParser, (req, res) => {
-  const { soup } = req.body;
+  const { soup , soupprice} = req.body;
 
   if (!soup) {
     return res.status(400).json({ status: 'error', message: 'Soup is required' });
@@ -601,9 +689,9 @@ app.post('/addsoup', jsonParser, (req, res) => {
       return res.status(409).json({ status: 'duplicate', message: 'This meat type already exists' });
     }
 
-    const insertQuery = 'INSERT INTO soup (Soup_name) VALUES (?)';
+    const insertQuery = 'INSERT INTO soup (Soup_name, Soup_price) VALUES (?,?)';
 
-    connection.query(insertQuery, [soup], (insertErr, insertResults) => {
+    connection.query(insertQuery, [soup, soupprice], (insertErr, insertResults) => {
       if (insertErr) {
         console.error('Error adding soup:', insertErr);
         return res.status(500).json({ status: 'error', message: 'An error occurred while adding the soup' });
@@ -786,23 +874,50 @@ app.get('/getorders', (req, res) => {
   });
 });
 
-/*
-app.get('/getorder/:id', (req, res) => {
+app.get('/gettotalcountorderdetail/:id', (req, res) => {
   const orderId = req.params.id;
-  connection.query('SELECT * FROM `order` WHERE Order_id = ?', [orderId], (err, results) => {
-    if (err) {
-      console.error('Error fetching order:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
+  connection.query(
+    'SELECT SUM(order_detail_quantity) AS Total_items FROM order_detail WHERE Order_id = ?', [orderId], (err, results) => {
+      if (err) {
+        console.error('Error fetching order:', err);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+      if (results.length === 0) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+      }
+      res.json(results[0]);
     }
-    if (results.length === 0) {
-      res.status(404).json({ error: 'Order not found' });
-      return;
-    }
-    res.json(results[0]);
-  });
-})
-*/
+  );
+});
+
+app.post('/apriori', async (req, res) => {
+  try {
+    // Get parameters from request body or use defaults
+    const params = {
+      db_config: {
+        host: process.env.DB_HOST || req.body.host || 'localhost',
+        user: process.env.DB_USER || req.body.user || 'root',
+        password: process.env.DB_PASSWORD || req.body.password || '',
+        database: process.env.DB_NAME || req.body.database || 'project',
+        query: req.body.query || 'SELECT transaction_id, item_id FROM transactions'
+      },
+      min_support: req.body.min_support || 0.1,
+      min_confidence: req.body.min_confidence || 0.5,
+      min_lift: req.body.min_lift || 1.0
+    };
+
+    // Run Apriori analysis
+    const results = await runApriori(params);
+
+    // Send results to client
+    res.json(results);
+  } catch (error) {
+    console.error('Error in Apriori analysis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.get('/getorderdetail/:id', (req, res) => {
   const orderId = req.params.id;
@@ -819,8 +934,8 @@ app.get('/getorderdetail/:id', (req, res) => {
           )
         END AS name,
         COALESCE(m.Menu_price, od.Order_detail_price) AS price
-       FROM Order_detail od
-       LEFT JOIN Menu m ON od.Menu_id = m.Menu_id
+       FROM order_detail od
+       LEFT JOIN menu m ON od.Menu_id = m.Menu_id
        LEFT JOIN noodle_type nt ON od.Noodle_type_id = nt.noodle_type_id
        LEFT JOIN soup s ON od.Soup_id = s.soup_id
        LEFT JOIN size sz ON od.Size_id = sz.size_id
@@ -1106,8 +1221,18 @@ app.get('/getstatus', (req, res) => {
 });
 
 
+// ดึงจำนวนออร์เดอร์ทั้งหมด
 app.get('/getordertotal', (req, res) => {
-  connection.query('SELECT COUNT(*) AS total FROM `order`', (err, results) => {
+  const { startDate, endDate } = req.query;
+  let query = 'SELECT COUNT(*) AS total FROM `order`';
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching total orders:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -1117,18 +1242,31 @@ app.get('/getordertotal', (req, res) => {
   });
 });
 
+// ดึงเมนูที่ถูกสั่งมากที่สุด
 app.get('/getTopOrderedMenus', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
       m.Menu_name AS name,
       SUM(od.Order_detail_quantity) AS total_quantity
     FROM order_detail od
     JOIN menu m ON od.Menu_id = m.Menu_id
+    JOIN \`order\` o ON od.Order_id = o.Order_id
+  `;
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
     GROUP BY m.Menu_id
     ORDER BY total_quantity DESC
-    LIMIT 5;
+    LIMIT 5
   `;
-  connection.query(query, (err, results) => {
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching top ordered menus:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -1138,12 +1276,22 @@ app.get('/getTopOrderedMenus', (req, res) => {
   });
 });
 
+// ดึงรายได้รวม
 app.get('/getTotalRevenue', (req, res) => {
-  const query = `
-    SELECT SUM(Order_detail_price * Order_detail_quantity) AS total_revenue
-    FROM order_detail;
+  const { startDate, endDate } = req.query;
+  let query = `
+    SELECT SUM(od.Order_detail_price * od.Order_detail_quantity) AS total_revenue
+    FROM order_detail od
+    INNER JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching total revenue:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -1153,22 +1301,32 @@ app.get('/getTotalRevenue', (req, res) => {
   });
 });
 
+// ดึงรายได้รายเดือน
 app.get('/getMonthlyRevenue', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
       MONTH(order_datetime) AS month, 
       YEAR(order_datetime) AS year, 
       SUM(Order_detail_price * Order_detail_quantity) AS revenue
     FROM 
-      order_detail
+      order_detail od
     JOIN
-      \`order\` ON order_detail.Order_id = \`order\`.Order_id
-    GROUP BY 
-      YEAR(order_datetime), MONTH(order_datetime)
-    ORDER BY 
-      YEAR(order_datetime), MONTH(order_datetime);
+      \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY YEAR(order_datetime), MONTH(order_datetime)
+    ORDER BY YEAR(order_datetime), MONTH(order_datetime)
+  `;
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching monthly revenue:', err);
       res.status(500).json({ error: 'server error' });
@@ -1178,37 +1336,35 @@ app.get('/getMonthlyRevenue', (req, res) => {
   });
 });
 
+// ดึงเมนูเส้นก๋วยเตี๋ยวที่ถูกสั่งเยอะที่สุด
 app.get('/getTopNoodleMenus', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
-      CONCAT(
-        nt.noodle_type_name, ' ',   
-        s.soup_name, ' ',           
-        mt.meat_name, ' ',        
-        sz.size_name        
-      ) AS menu_name,
+      CONCAT(nt.noodle_type_name, ' ', s.soup_name, ' ', mt.meat_name, ' ', sz.size_name) AS menu_name,
       SUM(od.Order_detail_quantity) AS total_quantity
     FROM 
       order_detail od
-
-    JOIN 
-      noodle_type nt ON od.Noodle_type_id = nt.noodle_type_id
-    JOIN 
-      soup s ON od.Soup_id = s.soup_id
-    JOIN 
-      meat mt ON od.Meat_id = mt.meat_id
-    JOIN 
-      size sz ON od.Size_id = sz.size_id
-    GROUP BY 
-      od.Noodle_type_id,    
-      od.Soup_id,          
-      od.Meat_id,
-      od.Size_id
-    ORDER BY 
-      total_quantity DESC
-    LIMIT 5;
+    JOIN noodle_type nt ON od.Noodle_type_id = nt.noodle_type_id
+    JOIN soup s ON od.Soup_id = s.soup_id
+    JOIN meat mt ON od.Meat_id = mt.meat_id
+    JOIN size sz ON od.Size_id = sz.size_id
+    JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY od.Noodle_type_id, od.Soup_id, od.Meat_id, od.Size_id
+    ORDER BY total_quantity DESC
+    LIMIT 5
+  `;
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching top noodle menus:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -1218,16 +1374,25 @@ app.get('/getTopNoodleMenus', (req, res) => {
   });
 });
 
+// ดึงข้อมูล Dine-in / Take-home
 app.get('/order-analytics', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
-      SUM(CASE WHEN order_takehome = 0 THEN 1 ELSE 0 END) as dineInCount,
-      SUM(CASE WHEN order_takehome = 1 THEN 1 ELSE 0 END) as takeHomeCount,
+      SUM(CASE WHEN o.order_takehome = 0 THEN 1 ELSE 0 END) as dineInCount,
+      SUM(CASE WHEN o.order_takehome = 1 THEN 1 ELSE 0 END) as takeHomeCount,
       COUNT(*) as totalOrders
-    FROM order_detail
+    FROM order_detail od
+    JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
+  const params = [];
 
-  connection.query(query, (err, results) => {
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: 'Failed to fetch order data' });
@@ -1242,19 +1407,31 @@ app.get('/order-analytics', (req, res) => {
   });
 });
 
+// ดึงเส้นก๋วยเตี๋ยวที่ถูกสั่งมากที่สุด
 app.get('/mostordernoodletype', (req, res) => {
-  const query = `
-  SELECT 
-      NT.NOODLE_TYPE_NAME as name,
+  const { startDate, endDate } = req.query;
+  let query = `
+    SELECT 
+      NT.Noodle_type_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN noodle_type NT ON od.Noodle_TYPE_id = Nt.NOODLE_TYPE_ID
-    GROUP BY NT.NOODLE_TYPE_ID, NT.NOODLE_TYPE_NAME
+    JOIN noodle_type NT ON od.Noodle_type_id = NT.Noodle_type_id
+    JOIN \`order\` o ON od.Order_id = o.Order_id
+  `;
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY NT.Noodle_type_id, NT.Noodle_type_name
     ORDER BY order_count DESC
-    LIMIT 1;
+    LIMIT 1
   `;
 
-  connection.query(query, (err, results) => {
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลเส้นที่ถูกสั่งมากที่สุดได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1264,18 +1441,31 @@ app.get('/mostordernoodletype', (req, res) => {
   });
 });
 
+// ดึงน้ำซุปที่ถูกสั่งมากที่สุด
 app.get('/mostordersoup', (req, res) => {
-  const query = `
-  SELECT 
+  const { startDate, endDate } = req.query;
+  let query = `
+    SELECT 
       s.soup_name as name,
       COUNT(*) as order_count
     FROM order_detail od
     JOIN soup s ON od.soup_id = s.soup_id
+    JOIN \`order\` o ON od.Order_id = o.Order_id
+  `;
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
     GROUP BY s.soup_id, s.soup_name
     ORDER BY order_count DESC
-    LIMIT 1;
+    LIMIT 1
   `;
-  connection.query(query, (err, results) => {
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลซุปที่ถูกสั่งมากที่สุดได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1285,18 +1475,30 @@ app.get('/mostordersoup', (req, res) => {
   });
 });
 
+// ดึงข้อมูลทุกเส้น
 app.get('/allnoodletypes', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
-      NT.NOODLE_TYPE_NAME as name,
+      NT.Noodle_type_name as name,
       COUNT(*) as order_count
     FROM order_detail od
-    JOIN NOODLE_TYPE NT ON od.NOODLE_TYPE_ID = NT.NOODLE_TYPE_ID
-    GROUP BY NT.NOODLE_TYPE_ID, NT.NOODLE_TYPE_NAME
-    ORDER BY order_count DESC;
+    JOIN noodle_type NT ON od.NOODLE_TYPE_ID = NT.NOODLE_TYPE_ID
+    JOIN \`order\` o ON od.Order_id = o.Order_id
+  `;
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY NT.NOODLE_TYPE_ID, NT.Noodle_type_name
+    ORDER BY order_count DESC
   `;
 
-  connection.query(query, (err, results) => {
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลเส้นได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1306,18 +1508,30 @@ app.get('/allnoodletypes', (req, res) => {
   });
 });
 
-
+// ดึงข้อมูลทุกซุป
 app.get('/allsoups', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
       s.soup_name as name,
       COUNT(*) as order_count
     FROM order_detail od
     JOIN soup s ON od.soup_id = s.soup_id
-    GROUP BY s.soup_id, s.soup_name
-    ORDER BY order_count DESC;
+    JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY s.soup_id, s.soup_name
+    ORDER BY order_count DESC
+  `;
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลน้ำซุปได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1327,18 +1541,30 @@ app.get('/allsoups', (req, res) => {
   });
 });
 
-
+// ดึงข้อมูลทุกเนื้อ
 app.get('/allmeats', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
       m.meat_name as name,
       COUNT(*) as order_count
     FROM order_detail od
     JOIN meat m ON od.meat_id = m.meat_id
-    GROUP BY m.meat_id, m.meat_name
-    ORDER BY order_count DESC;
+    JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY m.meat_id, m.meat_name
+    ORDER BY order_count DESC
+  `;
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลเนื้อสัตว์ได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1348,17 +1574,30 @@ app.get('/allmeats', (req, res) => {
   });
 });
 
+// ดึงข้อมูลทุกขนาด
 app.get('/allsizes', (req, res) => {
-  const query = `
+  const { startDate, endDate } = req.query;
+  let query = `
     SELECT 
       s.size_name as name,
       COUNT(*) as order_count
     FROM order_detail od
     JOIN size s ON od.size_id = s.size_id
-    GROUP BY s.size_id, s.size_name
-    ORDER BY order_count DESC;
+    JOIN \`order\` o ON od.Order_id = o.Order_id
   `;
-  connection.query(query, (err, results) => {
+  const params = [];
+
+  if (startDate && endDate) {
+    query += ' WHERE o.order_datetime BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  query += `
+    GROUP BY s.size_id, s.size_name
+    ORDER BY order_count DESC
+  `;
+
+  connection.query(query, params, (err, results) => {
     if (err) {
       console.log('ไม่สามารถดึงข้อมูลขนาดได้', err);
       res.status(500).json({ error: 'server error' });
@@ -1368,13 +1607,620 @@ app.get('/allsizes', (req, res) => {
   });
 });
 
-/*
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ status: 'error', message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
+
+app.post('/addmenutocart', (req, res) => {
+  const { id, price, quantity, homeDelivery, additionalInfo, orderId } = req.body;
+  const query = `
+    INSERT INTO cart (Menu_id, Price, Quantity, HomeDelivery, Additional, Order_id)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  connection.query(query, [id, price, quantity, homeDelivery, additionalInfo, orderId], (err, results) => {
+    if (err) {
+      console.error('Error adding menu to cart:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json({ message: 'Menu added to cart successfully', quantity });
+  });
 });
+
+app.post('/addnoodletocart', (req, res) => {
+  const { noodle_type_id, soup_id, meat_id, size_id, price, quantity, homeDelivery, additionalInfo, orderId } = req.body;
+  const query = `
+    INSERT INTO cart (Noodle_type_id, Soup_id, Meat_id,Size_id,Price, Quantity, HomeDelivery, Additional, Order_id)
+    VALUES (?,?,?,?,?, ?, ?, ?, ?)
+  `;
+  connection.query(query, [noodle_type_id, soup_id, meat_id, size_id, price, quantity, homeDelivery, additionalInfo, orderId], (err, results) => {
+    if (err) {
+      console.error('Error adding noodle to cart:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json({ message: 'Noodle added to cart successfully', quantity });
+  });
+});
+
+app.get('/cart/:id', (req, res) => {
+  const orderId = req.params.id;
+  const query = `
+    SELECT cart.*, noodle_type.*, soup.*, meat.*, size.*, menu.*
+    FROM cart
+    LEFT JOIN noodle_type ON cart.Noodle_type_id = noodle_type.Noodle_type_id
+    LEFT JOIN soup ON cart.Soup_id = soup.Soup_id
+    LEFT JOIN meat ON cart.Meat_id = meat.Meat_id
+    LEFT JOIN size ON cart.Size_id = size.Size_id
+    LEFT JOIN menu ON cart.Menu_id = menu.Menu_id
+    WHERE Order_id = ?
+  `;
+  connection.query(query, [orderId], (err, results) => {
+    if (err) {
+      console.error('Error fetching cart:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+})
+
+app.put('/cart/increase/:id', (req, res) => {
+  const { id } = req.params;
+  const { quantity } = req.body;
+  const query = `UPDATE cart SET Quantity = ? WHERE Cart_id = ?`;
+  connection.query(query, [quantity, id], (err, results) => {
+    if (err) {
+      console.log('error increase quantity:', err);
+      res.json({ error: 'Internal server error' });
+      return;
+    } console.log('increase quantity successfully')
+    res.json({ message: 'Quantity increased successfully' });
+  })
+})
+
+app.put('/cart/decrease/:id', (req, res) => {
+  const { id } = req.params;
+  const { quantity } = req.body;
+  const query = `UPDATE cart SET Quantity = ? WHERE Cart_id = ?`;
+  connection.query(query, [quantity, id], (err, results) => {
+    if (err) {
+      console.error('error decrease quantitiy:', err);
+      res.json({ error: 'Internal server error' });
+      return;
+    } res.json({ message: 'Quantity decreased successfully' });
+  });
+});
+
+app.delete('/cart/delete/:id', (req, res) => {
+  const { id } = req.params;
+  const query = `DELETE FROM cart WHERE Cart_id = ?`;
+  connection.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error deleting cart item:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json({ message: 'Item removed from cart successfully' });
+  });
+});
+
+app.delete('/cart/order/:id', (req, res) => {
+  const { id } = req.params;
+  const query = `DELETE FROM cart WHERE Order_id = ?`;
+  connection.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error deleting cart item:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json({ message: 'Item removed from cart successfully' });
+  });
+});
+
+app.get('/gettotalcartitems/:id', (req, res) => {
+  const orderId = req.params.id;
+  const query = `
+    SELECT SUM(Quantity) AS total_items
+    FROM cart
+    WHERE Order_id = ?
+  `;
+  connection.query(query, [orderId], (err, results) => {
+    if (err) {
+      console.error('Error fetching total cart items:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    const totalItems = results[0]?.total_items || 0;
+    res.json({ total_items: totalItems });
+  });
+});
+
+app.get('/getpromotions', (req, res) => {
+  // SQL query to get all promotions, ordered by newest first
+  const query = 'SELECT * FROM promotion ORDER BY Promotion_id DESC';
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('Error fetching promotions:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/getpromotiondetails/:promotionId', (req, res) => {
+  const { promotionId } = req.params;
+
+  if (!promotionId || isNaN(promotionId)) {
+    return res.status(400).json({ status: 'error', message: 'Valid promotion ID is required' });
+  }
+  const query = `
+    SELECT pmi.Promotion_Menu_Item_id, pmi.Promotion_id, pmi.Menu_id, pmi.Noodlemenu,
+           m.Menu_name
+    FROM promotion_menu_item pmi
+    LEFT JOIN menu m ON pmi.Menu_id = m.Menu_id
+    WHERE pmi.Promotion_id = ?
+  `;
+
+  connection.query(query, [promotionId], (error, results) => {
+    if (error) {
+      console.error('Error fetching promotion details:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    // If no results found
+    if (results.length === 0) {
+      return res.json([]);
+    }
+
+    res.json(results);
+  });
+});
+
+app.post('/addpromotion', (req, res) => {
+  const { promotionName, discount, startDate, endDate, menuType, includeNoodleMenu } = req.body;
+
+
+  if (!promotionName) {
+    return res.status(400).json({ status: 'error', message: 'Promotion name is required' });
+  }
+
+  if (!discount || isNaN(discount)) {
+    return res.status(400).json({ status: 'error', message: 'Discount value is required and must be a number' });
+  }
+
+  if (!startDate) {
+    return res.status(400).json({ status: 'error', message: 'Start date is required' });
+  }
+
+  if (!endDate) {
+    return res.status(400).json({ status: 'error', message: 'End date is required' });
+  }
+
+
+  const insertPromotionQuery = 'INSERT INTO promotion (Promotion_name, Discount_value, Start_date, End_date) VALUES (?, ?, ?, ?)';
+  connection.query(insertPromotionQuery, [promotionName, discount, startDate, endDate], (error, results) => {
+    if (error) {
+      console.error('Error adding promotion:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    const promotionId = results.insertId;
+    const menuItemPromises = [];
+
+
+    if (menuType && Array.isArray(menuType)) {
+      menuType.forEach(menuId => {
+
+        if (menuId) {
+          const insertMenuItemQuery = 'INSERT INTO promotion_menu_item (Promotion_id, Menu_id) VALUES (?, ?)';
+
+          const promise = new Promise((resolve, reject) => {
+            connection.query(insertMenuItemQuery, [promotionId, menuId], (menuItemError) => {
+              if (menuItemError) {
+                reject(menuItemError);
+                return;
+              }
+              resolve();
+            });
+          });
+
+          menuItemPromises.push(promise);
+        }
+      });
+    }
+
+
+    if (includeNoodleMenu) {
+      const insertNoodlePromotionQuery = `
+        INSERT INTO promotion_menu_item 
+        (Promotion_id, Menu_id, Noodlemenu) 
+        VALUES (?, NULL, ?)
+      `;
+
+      const noodlePromise = new Promise((resolve, reject) => {
+        connection.query(insertNoodlePromotionQuery, [promotionId, 1], (noodleError) => {
+          if (noodleError) {
+            reject(noodleError);
+            return;
+          }
+          resolve();
+        });
+      });
+
+      menuItemPromises.push(noodlePromise);
+    }
+
+    Promise.all(menuItemPromises)
+      .then(() => {
+        res.json({
+          status: 'ok',
+          message: 'Promotion and menu items added successfully',
+          promotionId
+        });
+      })
+      .catch(insertError => {
+        console.error('Error inserting promotion items:', insertError);
+        // Clean up by deleting the promotion if any item insertion fails
+        const deletePromotionQuery = 'DELETE FROM promotion WHERE Promotion_id = ?';
+        connection.query(deletePromotionQuery, [promotionId], () => {
+          res.status(500).json({
+            status: 'error',
+            message: insertError.message,
+            details: 'Failed to link menu items to promotion.'
+          });
+        });
+      });
+  });
+});
+
+app.get('/getactivepromotions', (req, res) => {
+  const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+  const query = `
+    SELECT * FROM promotion 
+    WHERE Start_date <= ?  AND End_date >= ?
+  `;
+
+  connection.query(query, [currentDate, currentDate], (error, results) => {
+    if (error) {
+      console.error('Error fetching active promotions:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+
+app.get('/getpromotionitems/:promotionId', (req, res) => {
+  const { promotionId } = req.params;
+
+  if (!promotionId || isNaN(promotionId)) {
+    return res.status(400).json({ status: 'error', message: 'Valid promotion ID is required' });
+  }
+
+  const query = `
+    SELECT * FROM promotion_menu_item 
+    WHERE Promotion_id = ?
+  `;
+
+  connection.query(query, [promotionId], (error, results) => {
+    if (error) {
+      console.error('Error fetching promotion items:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    // If there are noodle type combinations, get the details for them
+    const noodlePromotions = results.filter(item =>
+      item.noodle_type_id || item.soup_id || item.meat_id || item.size_id
+    );
+
+    if (noodlePromotions.length > 0) {
+
+      const noodleDetailsPromises = noodlePromotions.map(item => {
+        return new Promise((resolve) => {
+          resolve(item);
+        });
+      });
+
+      Promise.all(noodleDetailsPromises)
+        .then(detailedItems => {
+
+          const finalResults = results.map(item => {
+            const detailedItem = detailedItems.find(di => di.Promotion_Menu_Item_id === item.Promotion_Menu_Item_id);
+            return detailedItem || item;
+          });
+
+          res.json(finalResults);
+        })
+        .catch(detailsError => {
+          console.error('Error fetching noodle details:', detailsError);
+          // Return the basic results if details fetching fails
+          res.json(results);
+        });
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+app.put('/updatesize/:id', (req, res) => {
+  const { id } = req.params;
+  const { size, price } = req.body;
+
+  // Validate input
+  if (!size) {
+    return res.status(400).json({ status: 'error', message: 'Size name is required' });
+  }
+
+  if (!price || isNaN(price)) {
+    return res.status(400).json({ status: 'error', message: 'Valid price is required' });
+  }
+
+  // Use existing connection instead of creating a new one
+  const query = 'UPDATE size SET Size_name = ?, Size_price = ? WHERE Size_id = ?';
+  connection.query(query, [size, price, id], (error, results) => {
+    if (error) {
+      console.error('Error updating size:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    if (results.affectedRows === 0) {
+      res.status(404).json({ status: 'error', message: 'Size not found' });
+      return;
+    }
+
+    res.json({ status: 'ok', message: 'Size updated successfully' });
+  });
+});
+
+app.put('/updatemeat/:id', (req, res) => {
+  const { id } = req.params;
+  const { meat, price } = req.body;
+  if (!meat) {
+    return res.status(400).json({ status: 'error', message: 'Meat name is required' });
+  }
+
+  if (!meat || isNaN(price)) {
+    return res.status(400).json({ status: 'error', message: 'Meat price is required' });
+  }
+
+  const query = 'UPDATE meat SET Meat_name = ?, Meat_price = ? WHERE Meat_id = ?';
+  connection.query(query, [meat, price, id], (error, results) => {
+    if (error) {
+      console.error('Error updating size:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    if (results.affectedRows === 0) {
+      res.status(404).json({ status: 'error', message: 'meat not found' });
+      return;
+    }
+
+    res.json({ status: 'ok', message: 'Size updated successfully' });
+  });
+});
+app.put('/updatenoodletype/:id', (req, res) => {
+  const { id } = req.params;
+  const { noodlename, price } = req.body;
+
+
+  if (!noodlename) {
+    return res.status(400).json({ status: 'error', message: 'noodle name is required' });
+  }
+
+  if (!noodlename || isNaN(price)) {
+    return res.status(400).json({ status: 'error', message: 'noodle price is required' });
+  }
+
+  const query = 'UPDATE noodle_type SET Noodle_type_name = ?, Noodle_type_price = ? WHERE Noodle_type_id = ?';
+  connection.query(query, [noodlename, price, id], (error, results) => {
+    if (error) {
+      console.error('Error updating size:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    if (results.affectedRows === 0) {
+      res.status(404).json({ status: 'error', message: 'noodle not found' });
+      return;
+    }
+
+    res.json({ status: 'ok', message: 'noodle updated successfully' });
+  });
+});
+app.put('/updatesoup/:id', (req, res) => {
+  const { id } = req.params;
+  const { soup, price } = req.body;
+
+
+  if (!soup) {
+    return res.status(400).json({ status: 'error', message: 'Soup name is required' });
+  }
+
+  if (!soup || isNaN(price)) {
+    return res.status(400).json({ status: 'error', message: 'Soup price is required' });
+  }
+
+  const query = 'UPDATE soup SET Soup_name = ?, Soup_price = ? WHERE Soup_id = ?';
+  connection.query(query, [soup, price, id], (error, results) => {
+    if (error) {
+      console.error('Error updating soup:', error);
+      res.status(500).json({ status: 'error', message: error.message });
+      return;
+    }
+
+    if (results.affectedRows === 0) {
+      res.status(404).json({ status: 'error', message: 'soup not found' });
+      return;
+    }
+
+    res.json({ status: 'ok', message: 'Soup updated successfully' });
+  });
+});
+
+/*app.put('/updatepromotion/:id' , (req, res) => {
+  const promotionId = req.params.id;
+  const {promotionName , discount , startDate , enddate , menutype , includeNoodleMenu} = req.body;
+
+  if (!promotionName) {
+    return res.status(400).json({ status: 'error', message: 'Promotion name is required' });
+  }
+  
+  if (!discount || isNaN(discount)) {
+    return res.status(400).json({ status: 'error', message: 'Discount value is required and must be a number' });
+  }
+  
+  if (!startDate) {
+    return res.status(400).json({ status: 'error', message: 'Start date is required' });
+  }
+  
+  if (!endDate) {
+    return res.status(400).json({ status: 'error', message: 'End date is required' });
+  }
+
+  const query = 'UPDATE promotion ( Promotion_name, Discount_value ,Start_date , End_date) VALUES (?, ?, ?,?)  ';
+});*/
+
+app.put('/updatepromotion/:id', jsonParser, async (req, res) => {
+  try {
+    const promotionId = req.params.id;
+    const { promotionName, discount, startDate, endDate, menuTypes, includeNoodleMenu } = req.body;
+
+
+    const promiseConnection = connection.promise();
+
+
+    await promiseConnection.beginTransaction();
+
+    try {
+
+      await promiseConnection.execute(
+        `UPDATE promotion 
+         SET Promotion_name = ?, 
+             Discount_value = ?, 
+             Start_date = ?, 
+             End_date = ? 
+         WHERE Promotion_id = ?`,
+        [promotionName, discount, startDate, endDate, promotionId]
+      );
+
+
+      await promiseConnection.execute(
+        'DELETE FROM promotion_menu_item WHERE Promotion_id = ?',
+        [promotionId]
+      );
+
+      if (menuTypes && menuTypes.length > 0) {
+        const insertMenuPromises = menuTypes.map(menuId => {
+          return promiseConnection.execute(
+            'INSERT INTO promotion_menu_item (Promotion_id, Menu_id) VALUES (?, ?)',
+            [promotionId, menuId]
+          );
+        });
+
+        await Promise.all(insertMenuPromises);
+      }
+
+
+      if (includeNoodleMenu) {
+        await promiseConnection.execute(
+          'INSERT INTO promotion_menu_item (Promotion_id, Noodlemenu) VALUES (?, ?)',
+          [promotionId, 1]
+        );
+      }
+
+
+      await promiseConnection.commit();
+
+      res.status(200).json({
+        status: 'ok',
+        message: 'Promotion updated successfully',
+        promotionId
+      });
+
+    } catch (err) {
+
+      await promiseConnection.rollback();
+      throw err;
+    }
+  } catch (error) {
+    console.error(`Error updating promotion ${req.params.id}:`, error);
+    res.status(500).json({
+      status: 'error',
+      message: `Failed to update promotion ${req.params.id}`,
+      error: error.message
+    });
+  }
+});
+
+app.delete('/deletepromotion/:id', async (req, res) => {
+  try {
+    const promotionId = req.params.id;
+    const promiseConnection = connection.promise();
+    await promiseConnection.beginTransaction();
+    try {
+
+      await promiseConnection.execute(
+        'DELETE FROM promotion_menu_item WHERE Promotion_id = ?',
+        [promotionId]
+      );
+
+      const [result] = await promiseConnection.execute(
+        'DELETE FROM promotion WHERE Promotion_id = ?',
+        [promotionId]
+      );
+
+      if (result.affectedRows === 0) {
+        await promiseConnection.rollback();
+        return res.status(404).json({
+          status: 'error',
+          message: `Promotion with ID ${promotionId} not found`
+        });
+      }
+
+
+      await promiseConnection.commit();
+
+      res.status(200).json({
+        status: 'ok',
+        message: 'Promotion deleted successfully',
+        promotionId
+      });
+
+    } catch (err) {
+
+      await promiseConnection.rollback();
+      throw err;
+    }
+  } catch (error) {
+    console.error(`Error deleting promotion ${req.params.id}:`, error);
+    res.status(500).json({
+      status: 'error',
+      message: `Failed to delete promotion ${req.params.id}`,
+      error: error.message
+    });
+  }
+});
+
+PORT = process.env.PORT || 3333;
+/*
+DB_HOST=mysql.railway.internal
+DB_USER=root
+DB_PASSWORD=GijePtxifRrLfnZGwwsuIwulKsJRvkuT
+DB_NAME=railway
+DB_PORT=3306
+PORT=3333
+
 */
 
-app.listen(3333, () => {
-  console.log('CORS-enabled web server listening on port 3333, database :', connectdatabase);
+app.listen(PORT, () => {
+  console.log('App.js web server listening on port ', PORT, 'Host:', process.env.DB_HOST);
 });

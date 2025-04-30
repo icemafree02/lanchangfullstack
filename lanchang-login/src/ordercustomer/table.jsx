@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 function fetchTable() {
-  return fetch('http://localhost:3333/table')
+  return fetch('https://lanchangbackend-production.up.railway.app/table')
     .then(response => {
       if (!response.ok) {
         throw new Error('Network is not ok');

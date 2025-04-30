@@ -41,7 +41,7 @@ export default function SignInSide() {
     
     console.log('Sending login request with data:', jsonData);
   
-    fetch('http://localhost:3333/login', {
+    fetch('https://lanchangbackend-production.up.railway.app/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

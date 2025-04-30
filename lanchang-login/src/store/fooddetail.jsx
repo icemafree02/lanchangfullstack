@@ -25,7 +25,8 @@ function FoodDetail() {
 
   const [previewImage, setPreviewImage] = useState(null);
 
-  const soupTypes = ['เครื่องดื่ม', "ของหวาน", "เมนูอื่น", "เครื่องเคียง"];
+  const soupTypes = ['เครื่องดื่ม',"เครื่องเคียง", "เมนูอื่น"];
+  mysql://root:GijePtxifRrLfnZGwwsuIwulKsJRvkuT@shuttle.proxy.rlwy.net:51398/railway
 
   useEffect(() => {
     fetchMenuDetails();
@@ -33,7 +34,7 @@ function FoodDetail() {
 
   const fetchMenuDetails = async () => {
     try {
-      const response = await fetch(`http://localhost:3333/getmenu/${id}`);
+      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getmenu/${id}`);
       if (response.ok) {
         const data = await response.json();
         setFormData({
@@ -81,7 +82,7 @@ function FoodDetail() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3333/updatemenu/${id}`, {
+      const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatemenu/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -20,12 +20,12 @@ exports.post = async (req, res) => {
         const { noodleType, soupType, meatType, size } = req.body;
         db.query(
             `SELECT * , 
-                (noodle_type.noodle_type_price + 
+                (noodle_type.Noodle_type_price + 
                  soup.soup_price + 
                  meat.meat_price + 
                  size.size_price) as Total_price
              FROM noodle_type, soup, meat,size
-             WHERE noodle_Type.noodle_type_id = ? 
+             WHERE noodle_type.noodle_type_id = ? 
                AND soup.soup_id = ?
                AND meat.meat_id = ?
                AND size.size_id = ?`,

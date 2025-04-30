@@ -52,22 +52,21 @@ export function NavLinks(props) {
           <Link href="#">ประวัติออเดอร์</Link>
         </LinkItem>
         <LinkItem>
-            <Link href="#">ชำระเงิน</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">ดูรายการอาหารที่สั่ง</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">รายการอาหารที่ทำเสร็จเเล้ว</Link>
-          </LinkItem>
-
+          <Link href="#">ชำระเงิน</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="#">ดูรายการอาหารที่สั่ง</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="#">รายการอาหารที่ทำเสร็จเเล้ว</Link>
+        </LinkItem>
         <LinkItem>
           <Link href="./dashboard">รายงาน</Link>
         </LinkItem>
         <LinkItem>
           <Link href="./menupage">รายงานอาหาร</Link>
         </LinkItem>
-        
+
 
       </LinksWrapper>
     </NavLinksContainer>

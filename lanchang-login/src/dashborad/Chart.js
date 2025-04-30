@@ -8,31 +8,36 @@ const monthNames = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ];
 
-export default function MonthlyRevenueChart() {
+export default function MonthlyRevenueChart({startDate, endDate}) {
   const theme = useTheme();
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const fetchMonthlyRevenue = async () => {
-      try {
-        const response = await fetch('http://localhost:3333/getMonthlyRevenue');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const revenueData = await response.json();
-
-        const chartData = revenueData.map((item) => ({
-          time: `${monthNames[item.month -1]} ${item.year + 543}`,
-          amount: item.revenue,
-        }));
-        setData(chartData);
-      } catch (error) {
-        console.error('Error fetching monthly revenue:', error);
-      }
-    };
-
     fetchMonthlyRevenue();
-  }, []);
+  }, [startDate, endDate]);
+
+  const fetchMonthlyRevenue = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      console.log( queryParams);
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+    
+      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getMonthlyRevenue?${queryParams.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const revenueData = await response.json();
+
+      const chartData = revenueData.map((item) => ({
+        time: `${monthNames[item.month -1]} ${item.year + 543}`,
+        amount: item.revenue,
+      }));
+      setData(chartData);
+    } catch (error) {
+      console.error('Error fetching monthly revenue:', error);
+    }
+  };
 
   return (
     <React.Fragment>

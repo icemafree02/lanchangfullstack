@@ -5,10 +5,52 @@ import Box from '@mui/material/Box';
 import Title from './Title';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-export default function NoodleTypeStats() {
+export default function NoodleTypeStats({ startDate, endDate }) {
     const [stats, setStats] = useState([]);
+
     useEffect(() => {
-        fetch('http://localhost:3333/allnoodletypes')
+        fetchNoodletypeStats();
+    }, [startDate, endDate]);
+
+    const getDateRangeText = () => {
+        if (!startDate && !endDate) return "ทุกช่วงเวลา";
+        if (startDate && !endDate) {
+          const formattedDate = new Date(startDate).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          return `ตั้งแต่วันที่ ${formattedDate}`;
+        }
+        if (!startDate && endDate) {
+          const formattedDate = new Date(endDate).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          return `จนถึงวันที่ ${formattedDate}`;
+        }
+        
+        const startFormatted = new Date(startDate).toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        
+        const endFormatted = new Date(endDate).toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        
+        return `${startFormatted} - ${endFormatted}`;
+      };
+
+    const fetchNoodletypeStats = () => {
+        const queryParams = new URLSearchParams();
+        if (startDate) queryParams.append('startDate', startDate);
+        if (endDate) queryParams.append('endDate', endDate);
+        fetch(`https://lanchangbackend-production.up.railway.app/allnoodletypes?${queryParams.toString()}`)
             .then(response => {
                 if (!response.ok) throw new Error('ไม่มีการตอบสนอง');
                 return response.json();
@@ -19,7 +61,7 @@ export default function NoodleTypeStats() {
             .catch(error => {
                 console.error('ไม่สามารถโหลดข้อมูลได้:', error);
             });
-    }, []);
+    }
 
     return (
         <Container maxWidth="md">
@@ -36,11 +78,7 @@ export default function NoodleTypeStats() {
                     </BarChart>
                 </ResponsiveContainer>
                 <Typography color="text.secondary" sx={{ fontSize: 13, mt: 2 }}>
-                    อัปเดตเมื่อวันที่ {new Date().toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                    })}
+                    {getDateRangeText()}
                 </Typography>
             </Box>
         </Container>

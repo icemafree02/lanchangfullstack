@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { setCartItems } from '../slice/cartslice';
 import '../menu_detail.css';
-import { addItemToCart } from '../slice/cartslice';
 
 const MenuDetail = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const selectedMenu = useSelector(state => state.menu.selectedItem);
+  const orderId = useSelector(state => state.cart.orderId);
   const [quantity, setQuantity] = useState(1);
   const [homeDelivery, setHomeDelivery] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState('');
@@ -21,19 +21,36 @@ const MenuDetail = () => {
     setHomeDelivery(prev => !prev);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (selectedMenu) {
-      dispatch(addItemToCart({
-        id: selectedMenu.Menu_id,
-        name: selectedMenu.Menu_name,
-        price: selectedMenu.Menu_price,
-        type: 'menu',
-        quantity,
-        homeDelivery,
-        additionalInfo,
-      }));
-      console.log(`Added ${quantity} of ${selectedMenu.Menu_name} to cart.`);
-      navigate('/menu_order'); 
+      try {
+        const response = await fetch('https://lanchangbackend-production.up.railway.app/addmenutocart', {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: selectedMenu.Menu_id,
+            price: selectedMenu.Menu_price,
+            quantity,
+            homeDelivery,
+            additionalInfo,
+            orderId
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to add item to cart`);
+        }
+        const data = await response.json();
+        console.log(data)
+        dispatch(setCartItems(data.quantity));
+        console.log('Added to cart:', data);
+        navigate('/menu_order'); 
+
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+      }
     }
   };
 
@@ -53,7 +70,7 @@ const MenuDetail = () => {
             <div>
               <img
                 className="picture-detail"
-                src={`http://localhost:3333/menuimage/${selectedMenu.Menu_id}`}
+                src={`https://lanchangbackend-production.up.railway.app/menuimage/${selectedMenu.Menu_id}`}
                 alt={selectedMenu.Menu_name}
               />
               <h2 className="title">{selectedMenu.Menu_name}</h2>
@@ -100,7 +117,7 @@ const MenuDetail = () => {
             </button>
 
             <span id="quantity" className="value">{quantity}</span>
-            
+
             <button
               id="increase"
               className="increment"

@@ -37,51 +37,25 @@ const cartSlice = createSlice({
         state.items.push(newItem);
       }
     },
-    increaseQuantity: (state, action) => {
-      const { id, type, homeDelivery, additionalInfo } = action.payload;
-      const item = state.items.find(i =>
-        i.id.Noodle_type_id === id.Noodle_type_id &&
-        i.id.Soup_id === id.Soup_id &&
-        i.id.Meat_id === id.Meat_id &&
-        i.id.Size_id === id.Size_id &&
-        i.type === type &&
-        i.homeDelivery === homeDelivery &&
-        i.additionalInfo === additionalInfo
-      );
-      if (item) {
-        item.quantity += 1;
+    setCartItems: (state, action) => {
+      // If action.payload is an array of items with quantities
+      if (Array.isArray(action.payload)) {
+        state.items = action.payload.reduce((total, item) => {
+          return total + (item || 0);
+        }, 0);
+      } 
+      // If action.payload is already a number
+      else if (typeof action.payload === 'number') {
+        state.items = action.payload;
       }
-    },
-    decreaseQuantity: (state, action) => {
-      const { id, type, homeDelivery, additionalInfo } = action.payload;
-      const item = state.items.find(i =>
-        i.id.Noodle_type_id === id.Noodle_type_id &&
-        i.id.Soup_id === id.Soup_id &&
-        i.id.Meat_id === id.Meat_id &&
-        i.id.Size_id === id.Size_id &&
-        i.type === type &&
-        i.homeDelivery === homeDelivery &&
-        i.additionalInfo === additionalInfo
-      );
-      if (item && item.quantity > 1) {
-        item.quantity -= 1;
+      // Default to 0 if payload is invalid
+      else {
+        state.items = 0;
       }
-    },
-    removeItemFromCart: (state, action) => {
-      const { id, type, homeDelivery, additionalInfo } = action.payload;
-      state.items = state.items.filter(item =>
-        !(item.id.Noodle_type_id === id.Noodle_type_id &&
-          item.id.Soup_id === id.Soup_id &&
-          item.id.Meat_id === id.Meat_id &&
-          item.id.Size_id === id.Size_id &&
-          item.type === type &&
-          item.homeDelivery === homeDelivery &&
-          item.additionalInfo === additionalInfo)
-      );
     },
     setOrderId: (state, action) => {
       state.orderId = action.payload;
-      sessionStorage.setItem('orderId', action.payload.toString()); // ✅ Store in sessionStorage
+      sessionStorage.setItem('orderId', action.payload.toString());
     },
     clearCart: (state) => {
       state.orderedItems = [...state.items];
@@ -90,5 +64,5 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addItemToCart, increaseQuantity, decreaseQuantity, removeItemFromCart, clearCart, setOrderId } = cartSlice.actions;
+export const { addItemToCart, increaseQuantity, decreaseQuantity, removeItemFromCart, clearCart, setOrderId, setCartItems } = cartSlice.actions;
 export default cartSlice.reducer;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 function fetchMenu() {
-    return fetch('http://localhost:3333/menu')
+    return fetch('https://lanchangbackend-production.up.railway.app/menu')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network is not ok');

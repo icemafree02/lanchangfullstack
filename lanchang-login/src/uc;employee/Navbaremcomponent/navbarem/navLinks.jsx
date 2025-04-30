@@ -45,17 +45,22 @@ export function NavLinks(props) {
   return (
     <NavLinksContainer>
       <LinksWrapper>
-      <LinkItem>
-        <Link href="#">หน้าหลัก</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="/checkbin">ชำระเงิน</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="/order">ดูรายการอาหารที่สั่ง</Link>
-          </LinkItem>
-           
-           
+        <LinkItem>
+          <Link href="./firstpageem">หน้าหลัก</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/checkbin">ชำระเงิน</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/order">ดูรายการอาหารที่สั่ง</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/ordercustomer">สั่งอาหารให้ลูกค้า</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/table">โต๊ะ</Link>
+        </LinkItem>
+
       </LinksWrapper>
     </NavLinksContainer>
   );

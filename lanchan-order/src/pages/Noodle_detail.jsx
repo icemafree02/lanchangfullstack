@@ -2,46 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import '../menu_detail.css';
-import { addItemToCart } from '../slice/cartslice';
 import noodle from '../image/noodle.png';
+import {setCartItems } from '../slice/cartslice';
 
 const NoodleDetail = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const selectedNoodle = useSelector(state => state.noodle.selectedItem);
+  const orderId = useSelector(state => state.cart.orderId);
   const [quantity, setQuantity] = useState(1);
   const [homeDelivery, setHomeDelivery] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState('');
 
   const handleQuantityChange = (amount) => {
-    setQuantity(prevQuantity => Math.max(prevQuantity + amount, 1)); 
+    setQuantity(prevQuantity => Math.max(prevQuantity + amount, 1));
   };
 
   const handleHomeDeliveryChange = () => {
     setHomeDelivery(prev => !prev);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (selectedNoodle) {
-      dispatch(addItemToCart({
-        id: {
-          Noodle_type_id: selectedNoodle.Noodle_type_id,
-          Soup_id: selectedNoodle.Soup_id,
-          Meat_id: selectedNoodle.Meat_id,
-          Size_id: selectedNoodle.Size_id
-        },
-        name: selectedNoodle.formattedName,
-        price: selectedNoodle.Total_price,
-        quantity,
-        type: 'noodle',
-        homeDelivery,
-        additionalInfo
-      }));
-      console.log(`Added ${quantity} of ${selectedNoodle.formattedName} to cart.`);
-      navigate('/menu_order'); 
+      try {
+        const response = await fetch('https://lanchangbackend-production.up.railway.app/addnoodletocart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            noodle_type_id: selectedNoodle.Noodle_type_id,
+            soup_id: selectedNoodle.Soup_id,
+            meat_id: selectedNoodle.Meat_id,
+            size_id: selectedNoodle.Size_id,
+            price: selectedNoodle.Total_price,
+            quantity,
+            homeDelivery,
+            additionalInfo,
+            orderId
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add item to cart');
+        }
+        const data = await response.json();
+        console.log('Added to cart:', data);
+        dispatch(setCartItems(data.quantity));
+        navigate('/menu_order');
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+      }
     }
-};
+  };
 
   useEffect(() => {
     if (!selectedNoodle) {
@@ -49,6 +62,7 @@ const NoodleDetail = () => {
     }
   }, [selectedNoodle, navigate]);
 
+  
   return (
     <div>
       <header className="header"></header>

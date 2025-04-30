@@ -33,7 +33,7 @@ function EmployeeDetail() {
 
     const fetchEmployees = async () => {
         try {
-            const response = await fetch(`http://localhost:3333/getem/${id}`);
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getem/${id}`);
             if (response.ok) {
                 const data = await response.json();
                 console.log("Employee data:", data); // เพื่อตรวจสอบข้อมูลที่ได้รับ
@@ -72,7 +72,7 @@ function EmployeeDetail() {
         };
     
         try {
-            const response = await fetch(`http://localhost:3333/updateem/${id}`, {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updateem/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

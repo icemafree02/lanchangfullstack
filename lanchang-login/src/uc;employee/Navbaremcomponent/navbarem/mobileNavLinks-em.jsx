@@ -82,7 +82,7 @@ export function MobileNavLinks(props) {
 
       <LinksWrapper isOpen={isOpen}>
         <LinkItem>
-          <Link href="#">หน้าหลัก</Link>
+          <Link href="./firstpageem">หน้าหลัก</Link>
         </LinkItem>
         <LinkItem>
           <Link href="/checkbin">ชำระเงิน</Link>
@@ -90,8 +90,12 @@ export function MobileNavLinks(props) {
         <LinkItem>
           <Link href="/order">ดูรายการอาหารที่สั่ง</Link>
         </LinkItem>
-
-
+        <LinkItem>
+          <Link href="/ordercustomer">สั่งอาหารให้ลูกค้า</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/table">โต๊ะ</Link>
+        </LinkItem>
         <Marginer />
         <AccessibilityWrapper>
           <Accessibility />

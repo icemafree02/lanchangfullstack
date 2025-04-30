@@ -11,10 +11,10 @@ const NavLinksContainer = styled.div`
 
 const LinksWrapper = styled.ul`
   margin: 0;
-  padding: 20px 0; // เพิ่มพื้นที่ว่างด้านบนและล่าง
+  padding: 20px 0 60px; /* extra bottom padding for scroll visibility */
   display: flex;
   height: 100vh;
-  width: 80%; // เพิ่มความกว้างของเมนู
+  width: 80%;
   list-style: none;
   background-color: #fff;
   flex-direction: column;
@@ -24,8 +24,10 @@ const LinksWrapper = styled.ul`
   transition: left 0.3s ease-in-out;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  overflow-y: auto;
+  overflow-y: scroll; /* always show scrollbar */
+  box-sizing: border-box;
 `;
+
 
 const LinkItem = styled.li`
   width: 100%;

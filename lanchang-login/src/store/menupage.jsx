@@ -8,17 +8,18 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-
+import Grid from '@mui/material/Grid';
+import AddIcon from '@mui/icons-material/Add';
+import RamenDiningIcon from '@mui/icons-material/RamenDining';
+import LocalDiningIcon from '@mui/icons-material/LocalDining';
 const styles = {
-
-
   basketpage: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh', // ใช้ 'vh' ใน JSX
+    minHeight: '100vh',
   },
 
-  menuContainer: { 
+  menuContainer: {
     flex: 1,
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -36,11 +37,25 @@ const styles = {
     textDecoration: 'none',
     color: 'inherit',
     position: 'relative',
+    height: '120px',
+  },
+
+  cartesianMenuItem: {
+    display: 'flex',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    textDecoration: 'none',
+    color: 'inherit',
+    position: 'relative',
+    height: '120px',
+    border: '1px dashed #adb5bd',
   },
 
   menuImage: {
     width: '100px',
-    height: '100px',
+    height: '100%',
     objectFit: 'cover',
   },
 
@@ -49,61 +64,110 @@ const styles = {
     padding: '0.5rem',
   },
 
-  menuInfoH3: { // เปลี่ยนชื่อคลาสให้ถูกต้องใน JSX
+  menuInfoH3: {
     margin: 0,
     fontSize: '1rem',
   },
 
-  menuInfoP: { // เปลี่ยนชื่อคลาสให้ถูกต้องใน JSX
+  menuInfoP: {
     margin: '0.5rem 0 0',
     fontWeight: 'bold',
   },
 
+  filters: {
+    display: 'flex',
+    justifyContent: 'center',
+    margin: '20px 0',
+    flexWrap: 'wrap',
+    gap: '10px',
+  },
 
+  filterButton: {
+    padding: '8px 16px',
+    borderRadius: '20px',
+  },
 
-  '@media (max-width: 600px)': { // เพิ่ม '@media' สำหรับ responsive design
+  activeFilter: {
+    backgroundColor: '#4CAF50',
+    color: 'white',
+  },
+
+  searchContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    margin: '10px 0 20px',
+  },
+
+  searchInput: {
+    padding: '8px 12px',
+    width: '300px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+  },
+
+  placeholderImage: {
+    width: '100px',
+    height: '100%',
+    backgroundColor: '#f0f0f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#666',
+  },
+
+  '@media (max-width: 600px)': {
     menuItem: {
       flexDirection: 'column',
+      height: 'auto',
     },
     menuImage: {
       width: '100%',
       height: '150px',
     },
+    cartesianMenuItem: {
+      flexDirection: 'column',
+      height: 'auto',
+    },
   },
 };
-function Abbmenu() {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '5px' }}>
-      <Button variant="contained" style={{ width: '300px' }} >เพิ่มเมนูอื่นๆ</Button>
-    </div>
-  );
-}
 
-function Abbnoodle() {
+function AddMenuButton({ text, linkTo }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '5px' }}>
-      <Button variant="contained" style={{ width: '300px' }}>เพิ่มรายการก๋วยเตี๋ยว</Button>
+      <Button
+        variant="contained"
+        component={Link}
+        to={linkTo}
+        startIcon={<AddIcon />}
+        style={{ width: '300px' }}
+      >
+        {text}
+      </Button>
     </div>
   );
 }
 
 function Basket() {
   const [menuItems, setMenuItems] = useState([]);
-  const [NoodlemenuItems, setNoodlemenuItems] = useState([]);
+  const [noodleMenuItems, setNoodleMenuItems] = useState([]);
   const [soups, setSoups] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [meats, setMeats] = useState([]);
   const [noodleTypes, setNoodleTypes] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [allPossibleMenus, setAllPossibleMenus] = useState([]);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchAllData = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('http://localhost:3333/soups'),
-        fetch('http://localhost:3333/sizes'),
-        fetch('http://localhost:3333/meats'),
-        fetch('http://localhost:3333/noodletypes')
+        fetch('https://lanchangbackend-production.up.railway.app/soups'),
+        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
+        fetch('https://lanchangbackend-production.up.railway.app/meats'),
+        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -113,34 +177,34 @@ function Basket() {
         noodleTypeRes.json()
       ]);
 
-      console.log('Noodle types from API:', noodleTypeData);
-
       setSoups(soupData);
       setSizes(sizeData);
       setMeats(meatData);
       setNoodleTypes(noodleTypeData);
-      console.log('Data fetched successfully:', { soupData, sizeData, meatData, noodleTypeData });
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    console.log('noodleTypes updated:', noodleTypes);
-  }, [noodleTypes]);
 
+
+  
+
+
+
+  
   useEffect(() => {
-    fetchNoodleMenuItems();
     fetchAllData();
     fetchMenuItems();
   }, []);
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch('http://localhost:3333/getmenu');
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
       if (response.ok) {
         const data = await response.json();
-        console.log('Menu items data', data);
         setMenuItems(data);
       } else {
         console.error('Failed to fetch menu items');
@@ -150,19 +214,50 @@ function Basket() {
     }
   };
 
-  const fetchNoodleMenuItems = async () => {
+ 
+
+  const handleDeleteClick = (item, isNoodleMenu) => {
+    setItemToDelete({ ...item, isNoodleMenu });
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setItemToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
     try {
-      const response = await fetch('http://localhost:3333/getnoodlemenu');
+      const endpoint = itemToDelete.isNoodleMenu ?
+        `https://lanchangbackend-production.up.railway.app/deletenoodlemenu/${itemToDelete.Noodle_menu_id}` :
+        `https://lanchangbackend-production.up.railway.app/deletemenu/${itemToDelete.Menu_id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+      });
+
       if (response.ok) {
-        const data = await response.json();
-        setNoodlemenuItems(data);
+        if (itemToDelete.isNoodleMenu) {
+          setNoodleMenuItems(prevItems => prevItems.filter(item => item.Noodle_menu_id !== itemToDelete.Noodle_menu_id));
+        } else {
+          setMenuItems(prevItems => prevItems.filter(item => item.Menu_id !== itemToDelete.Menu_id));
+        }
+        alert('ลบเมนูสำเร็จ');
       } else {
-        console.error('Failed to fetch noodle menu items');
+        alert('เกิดข้อผิดพลาดในการลบเมนู');
       }
     } catch (error) {
-      console.error('Error fetching noodle menu items:', error);
+      console.error('Error deleting menu item:', error);
+      alert('เกิดข้อผิดพลาดในการลบเมนู');
     }
+
+    handleCloseDialog();
   };
+
+
+
 
   const getNoodleTypeName = (id) => {
     const noodle = noodleTypes.find(type => type.Noodle_type_id === id);
@@ -189,102 +284,196 @@ function Basket() {
     const soup_name = getSoupName(soup_id);
     const meat_name = getMeatName(meat_id);
     const size_name = getSizeName(size_id);
-    console.log('Menu name components:', { noodle_type_name, soup_name, meat_name, size_name });
-    
+
     return `${noodle_type_name} ${soup_name} ${meat_name} (${size_name})`;
-  }
-
-  const handleDeleteClick = (item, isNoodleMenu) => {
-    setItemToDelete({ ...item, isNoodleMenu });
-    setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setItemToDelete(null);
+  const getTotalPrice = (sizeId, noodleTypeId , meatId) => {
+    const size = sizes.find(s => s.Size_id === sizeId);
+    const noodleType = noodleTypes.find(n => n.Noodle_type_id === noodleTypeId);
+    const meat = meats.find(m => m.Meat_id === meatId);
+
+    const sizePrice = size ? size.Size_price : 0;
+    const noodleTypePrice = noodleType ? noodleType.Noodle_type_price : 0;
+    const meatPrice = meat ? meat.Meat_price : 0;
+
+    return sizePrice + noodleTypePrice + meatPrice;
   };
 
-  const handleConfirmDelete = async () => {
-    if (!itemToDelete) return;
 
-    try {
-      const endpoint = itemToDelete.isNoodleMenu ? 
-        `http://localhost:3333/deletenoodlemenu/${itemToDelete.Noodle_menu_id}` :
-        `http://localhost:3333/deletemenu/${itemToDelete.Menu_id}`;
+  const filterBySearch = (items) => {
+    if (!searchTerm) return items;
 
-      const response = await fetch(endpoint, {
-        method: 'DELETE',
-      });
+    return items.filter(item => {
+      const itemName = item.Menu_name || item.Noodle_menu_name ||
+        getMenuName(item.Noodle_type_id, item.Soup_id, item.Meat_id, item.Size_id);
+      return itemName.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  };
 
-      if (response.ok) {
-        if (itemToDelete.isNoodleMenu) {
-          setNoodlemenuItems(prevItems => prevItems.filter(item => item.Noodle_menu_id !== itemToDelete.Noodle_menu_id));
-        } else {
-          setMenuItems(prevItems => prevItems.filter(item => item.Menu_id !== itemToDelete.Menu_id));
-        }
-        alert('ลบเมนูสำเร็จ');
-      } else {
-        alert('เกิดข้อผิดพลาดในการลบเมนู');
-      }
-    } catch (error) {
-      console.error('Error deleting menu item:', error);
-      alert('เกิดข้อผิดพลาดในการลบเมนู');
+
+  const displayAllMenuItems = () => {
+    let allItems = [];
+    // เพิ่มเมนูทั่วไปที่มีอยู่แล้ว
+    if (activeFilter === 'all' || activeFilter === 'existing') {
+      allItems = [...allItems, ...menuItems.map(item => ({
+        ...item,
+        isNoodleMenu: false,
+        isExisting: true
+      }))];
+    }
+    // มเมนูก๋วยตีี๋ยว
+    if (activeFilter === 'all' || activeFilter === 'cartesian') {
+      allItems = [...allItems, ...allPossibleMenus];
+    }
+    //กรองตามการค้นหา
+    allItems = filterBySearch(allItems);
+
+    // เรียงลำดับเมนู: เมนูที่มีอยู่แล้วก่อน, ตามด้วย Cartesian product
+    allItems.sort((a, b) => {
+      if (a.isExisting && !b.isExisting) return -1;
+      if (!a.isExisting && b.isExisting) return 1;
+      return 0;
+    });
+
+    if (allItems.length === 0) {
+      return <p style={{ textAlign: 'center', width: '100%' }}>ไม่พบเมนูที่ตรงกับการค้นหา</p>;
     }
 
-    handleCloseDialog();
+    return (
+      <Grid container spacing={2}>
+        {allItems.map((item) => {
+          const isCartesianItem = item.isCartesian;
+          const menuName = item.Menu_name || item.Noodle_menu_name ||
+            getMenuName(item.Noodle_type_id, item.Soup_id, item.Meat_id, item.Size_id);
+          const price = item.Menu_price || item.Noodle_menu_price;
+
+          return (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={`${item.isNoodleMenu ? 'noodle' : 'menu'}-${item.Noodle_menu_id || item.Menu_id || item.id}`}>
+              <div style={isCartesianItem ? styles.cartesianMenuItem : styles.menuItem}>
+                {!isCartesianItem ? (
+                  <Link
+                    to={item.isNoodleMenu ? `/noodledetail/${item.Noodle_menu_id}` : `/fooddetail/${item.Menu_id}`}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'flex', width: '100%' }}
+                  >
+                    {item.Noodle_menu_picture || item.Menu_picture ? (
+                      <img
+                        src={`data:image/jpeg;base64,${item.Noodle_menu_picture || item.Menu_picture}`}
+                        alt={menuName}
+                        style={styles.menuImage}
+                      />
+                    ) : (
+                      <div style={styles.placeholderImage}>No Image</div>
+                    )}
+                    <div style={styles.menuInfo}>
+                      <h3 style={styles.menuInfoH3}>{menuName}</h3>
+                      <p style={styles.menuInfoP}>ราคา: {price} บาท</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <>
+                    
+                     <div style={styles.placeholderImage}>
+                      <RamenDiningIcon/>
+                    </div>
+                    
+                   
+                    <div style={styles.menuInfo}>
+                      <h3 style={styles.menuInfoH3}>{menuName}</h3>
+                      <p style={styles.menuInfoP}>
+                        ราคา: {getTotalPrice(item.Size_id, item.Noodle_type_id , item.Meat_id)} บาท
+                      </p>
+                    </div>
+                  </>
+                )}
+                {!isCartesianItem && (
+                  <Button
+                  variant="outlined"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => handleDeleteClick(item, item.isNoodleMenu)}
+                  style={{ position: 'absolute', bottom: '10px', right: '10px', padding: '4px 8px' }}
+                  size="small"
+                  color="error"
+                >
+                  ลบ
+                </Button>
+                )}
+              </div>
+            </Grid>
+          );
+        })}
+      </Grid>
+    );
   };
 
-  if (!Array.isArray(noodleTypes) || noodleTypes.length === 0) {
-    return <div>กำลังโหลดข้อมูล...</div>;
+  // แสดงการโหลดหากข้อมูลยังไม่พร้อม
+  if (loading) {
+    return <div style={{ textAlign: 'center', marginTop: '100px' }}>กำลังโหลดข้อมูล...</div>;
   }
 
   return (
-    <div style={styles.basketPage}>
+    <div style={styles.basketpage}>
       <Navbarow />
-      <Link to="/addmenu"><Abbmenu /> </Link>
-      <Link to="/addnoodle"><Abbnoodle /> </Link>
 
-      <div className='listmenu' style={styles.menuContainer}>
-        {NoodlemenuItems.map((item) => (
-          <div key={`noodle-${item.Noodle_menu_id}`} style={styles.menuItem}>
-            <Link to={`/noodledetail/${item.Noodle_menu_id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-              <img src={`data:image/jpeg;base64,${item.Noodle_menu_picture}`} alt={item.Noodle_menu_name} style={styles.menuImage} />
-              <div style={styles.menuInfo}>
-                <h3 style={styles.menuInfoH3}>{getMenuName(item.Noodle_type_id, item.Soup_id, item.Meat_id, item.Size_id)}</h3>
-                <p>ราคา: {item.Noodle_menu_price} บาท</p>
-              </div>
-            </Link>
-            <Button 
-              variant="outlined" 
-              startIcon={<DeleteIcon />} 
-              onClick={() => handleDeleteClick(item, true)}
-              style={{ position: 'absolute', bottom: '10px', right: '10px' }}
-            >
-              ลบเมนู
-            </Button>
-          </div>
-        ))}
-        {menuItems.map((item) => (
-          <div key={`menu-${item.Menu_id}`} style={styles.menuItem}>
-            <Link to={`/fooddetail/${item.Menu_id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-              <img src={`data:image/jpeg;base64,${item.Menu_picture}`} alt={item.Menu_name} style={styles.menuImage} />
-              <div style={styles.menuInfo}>
-                <h3 style={styles.menuInfoH3}>{item.Menu_name}</h3> 
-                <p>ราคา:{item.Menu_price} บาท</p>
-              </div>
-            </Link>
-            <Button 
-              variant="outlined" 
-              startIcon={<DeleteIcon />} 
-              onClick={() => handleDeleteClick(item, false)}
-              style={{ position: 'absolute', bottom: '10px', right: '10px' }}
-            >
-              ลบเมนู
-            </Button>
-          </div>
-        ))}
+      <AddMenuButton text="เพิ่มเมนูอื่นๆ" linkTo="/addmenu" />
+      <AddMenuButton text="เพิ่มรายการก๋วยเตี๋ยว" linkTo="/Addex" />
+
+      {/* ส่วนของการกรองและค้นหา */}
+      <div style={styles.filters}>
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>      ทั้งหมด ({noodleMenuItems.length + menuItems.length + allPossibleMenus.length}) เมนู
+        </div>
+        {/* 
+        <Button 
+          variant={activeFilter === 'all' ? "contained" : "outlined"}
+          onClick={() => setActiveFilter('all')}
+          style={{...styles.filterButton, ...(activeFilter === 'all' ? styles.activeFilter : {})}}
+        >
+          ทั้งหมด ({noodleMenuItems.length + menuItems.length + allPossibleMenus.length})
+        </Button>
+        */}
+
+        {/*
+         <Button 
+          variant={activeFilter === 'existing' ? "contained" : "outlined"}
+          onClick={() => setActiveFilter('existing')}
+          style={{...styles.filterButton, ...(activeFilter === 'existing' ? styles.activeFilter : {})}}
+        >
+          เมนูอื่น ({noodleMenuItems.length + menuItems.length})
+        </Button>
+        */ }
+
+        {/*
+         <Button 
+          variant={activeFilter === 'cartesian' ? "contained" : "outlined"}
+          onClick={() => setActiveFilter('cartesian')}
+          style={{...styles.filterButton, ...(activeFilter === 'cartesian' ? styles.activeFilter : {})}}
+        >
+          เมนูก๋วยเตี๊ยว ({allPossibleMenus.length})
+        </Button>
+        */ }
+
+      </div>
+      
+      <div style={styles.searchContainer}>
+        <input
+          type="text"
+          placeholder="ค้นหาเมนู..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={styles.searchInput}
+        />
+      </div>
+      
+      
+
+
+
+    
+      <div className='listmenu' style={{ padding: '1rem' }}>
+        {displayAllMenuItems()}
       </div>
 
+      {/* Dialog ยืนยันการลบเมนู */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
@@ -295,11 +484,21 @@ function Basket() {
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             คุณแน่ใจหรือไม่ที่จะลบเมนูนี้?
+            {itemToDelete && (
+              <p>
+                <strong>
+                  {itemToDelete.isNoodleMenu
+                    ? getMenuName(itemToDelete.Noodle_type_id, itemToDelete.Soup_id, itemToDelete.Meat_id, itemToDelete.Size_id)
+                    : itemToDelete.Menu_name
+                  }
+                </strong>
+              </p>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>ยกเลิก</Button>
-          <Button onClick={handleConfirmDelete} autoFocus>
+          <Button onClick={handleConfirmDelete} color="error">
             ยืนยัน
           </Button>
         </DialogActions>

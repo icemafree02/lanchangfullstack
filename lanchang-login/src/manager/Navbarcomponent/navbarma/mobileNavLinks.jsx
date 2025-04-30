@@ -78,43 +78,37 @@ export function MobileNavLinks(props) {
     <NavLinksContainer>
       <MenuToggle isOpen={isOpen} toggle={() => setOpen(!isOpen)} />
       <Overlay isOpen={isOpen} onClick={() => setOpen(false)} />
-        <LinksWrapper isOpen={isOpen}>
-          <LinkItem><Link href="#">หน้าหลัก</Link></LinkItem>
-          <LinkItem>
-            <Link href="#">ประวัติออเดอร์</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">ชำระเงิน</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">ดูรายการอาหารที่สั่ง</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">รายการอาหารที่ทำเสร็จเเล้ว</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">พนักงาน</Link>
-          </LinkItem>
-          
-          <LinkItem>
-            <Link href="./dashboard">รายงาน</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="./menupage">รายการอาหาร</Link>
-          </LinkItem>
-         
-            
-        
-
-
-
-
-          <Marginer />
+      <LinksWrapper isOpen={isOpen}>
+        <LinkItem>
+          <Link href="./firstpage">หน้าหลัก</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/history">ประวัติออเดอร์</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/checkbin">ชำระเงิน</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="/order">ดูรายการอาหารที่สั่ง</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./menupage">รายงานอาหาร</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./dashboard">รายงาน</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./ordercustomer">สั่งอาหารให้ลูกค้า</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./table">โต๊ะ</Link>
+        </LinkItem>
+        <Marginer />
         <AccessibilityWrapper>
           <Accessibility />
         </AccessibilityWrapper>
-        </LinksWrapper>
-      
+      </LinksWrapper>
+
     </NavLinksContainer>
   );
 }

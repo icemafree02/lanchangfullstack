@@ -60,7 +60,7 @@ const Newordercustomer = () => {
         if (!confirm) return;
 
         try {
-            const reserveResponse = await fetch(`http://localhost:3333/table/${TableList}`, {
+            const reserveResponse = await fetch(`https://lanchangbackend-production.up.railway.app/table/${TableList}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status_id: 2 }),
@@ -70,7 +70,7 @@ const Newordercustomer = () => {
                 throw new Error(`Failed to reserve table ${TableList}`);
               }
 
-            const createOrderResponse = await fetch('http://localhost:3333/orders', {
+            const createOrderResponse = await fetch('https://lanchangbackend-production.up.railway.app/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tableId: TableList }),
@@ -86,7 +86,7 @@ const Newordercustomer = () => {
             const items = [
                 ...MenuList.map(item => {
                     return {
-                        id: item.MenuId,
+                        menuId: item.MenuId,
                         type: "menu",
                         quantity: parseInt(item.Qty),
                         price: item.Price,
@@ -99,7 +99,7 @@ const Newordercustomer = () => {
                         throw new Error('Missing NoodleComponent');
                     }
                     return {
-                        id: {
+                        noodleDetails: {
                             Noodle_type_id: item.NoodleComponent.noodleType,
                             Soup_id: item.NoodleComponent.soupType,
                             Meat_id: item.NoodleComponent.meatType,
@@ -115,7 +115,7 @@ const Newordercustomer = () => {
             ];
 
 
-            const response = await fetch(`http://localhost:3333/orders/${orderId}/add_items`, {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/orders/${orderId}/add_items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cartItems: items }),

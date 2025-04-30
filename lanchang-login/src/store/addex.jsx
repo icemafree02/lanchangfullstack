@@ -17,12 +17,13 @@ const styles = {
     },
     menuButtonsContainer: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(50px, 3fr))',
         gap: '5rem',
         padding: '3rem',
-        justifyContent: 'center',
-        alignContent: 'center',
+        justifyContent: 'flex-start',
+        alignContent: 'top',
         flex: 1,
+        marginLeft: '-2rem'
     },
     menuButton: {
         display: 'flex',
@@ -86,15 +87,16 @@ function Listex() {
     return (
 
         <Box sx={styles.container}>
-            <IconButton
-                onClick={() => navigate(-1)}
-                sx={{ alignSelf: 'flex-start', marginBottom: '2rem' }}
-            >
-                <ArrowBackIcon />
 
-
-            </IconButton>
-            <div>    <h1 style={{ textAlign: 'center', margin: '20px 0' }}>เพิ่มรายการส่วนประกอบก๋วยเตี๋ยว</h1> </div>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <IconButton onClick={() => navigate(-1)}>
+                    <ArrowBackIcon />
+                </IconButton>
+                
+            </Box>
+            <Typography variant="h5" sx={{ textAlign: 'center', marginTop: '0', fontWeight:'bold' }}>
+                    เพิ่มรายการส่วนประกอบก๋วยเตี๋ยว
+                </Typography>
 
             <MenuButtons />
         </Box>

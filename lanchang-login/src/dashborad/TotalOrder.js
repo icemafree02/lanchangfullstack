@@ -4,25 +4,63 @@ import Title from './Title';
 import Box from '@mui/material/Box';
 import { Container } from '@mui/material';
 
-export default function TotalOrder() {
+export default function TotalOrder({ startDate, endDate }) {
   const [totalOrders, setTotalOrders] = React.useState(0);
-
+  
   React.useEffect(() => {
-    const fetchTotalOrders = async () => {
-      try {
-        const response = await fetch('http://localhost:3333/getordertotal');
-        if (!response.ok) {
-          throw new Error('ไม่สามารถเชื่อมต่อได้');
-        }
-        const data = await response.json();
-        setTotalOrders(data.total || 0);
-      } catch (error) {
-        console.error('ไม่สามารถรับข้อมูลได้', error);
-        setTotalOrders('Error');
-      }
-    };
     fetchTotalOrders();
-  }, []);
+  }, [startDate, endDate]);
+
+  const getDateRangeText = () => {
+    if (!startDate && !endDate) return "ทุกช่วงเวลา";
+    if (startDate && !endDate) {
+      const formattedDate = new Date(startDate).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      return `ตั้งแต่วันที่ ${formattedDate}`;
+    }
+    if (!startDate && endDate) {
+      const formattedDate = new Date(endDate).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      return `จนถึงวันที่ ${formattedDate}`;
+    }
+    
+    const startFormatted = new Date(startDate).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    const endFormatted = new Date(endDate).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    return `${startFormatted} - ${endFormatted}`;
+  };
+
+  const fetchTotalOrders = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getordertotal?${queryParams.toString()}`);
+      if (!response.ok) {
+        throw new Error('ไม่สามารถเชื่อมต่อได้');
+      }
+      const data = await response.json();
+      setTotalOrders(data.total || 0);
+    } catch (error) {
+      console.error('ไม่สามารถรับข้อมูลได้', error);
+      setTotalOrders('Error');
+    }
+  };
 
   return (
     <div>
@@ -33,11 +71,7 @@ export default function TotalOrder() {
             {typeof totalOrders === 'number' ? `${totalOrders.toLocaleString()} ออเดอร์` : totalOrders}
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 2 }}>
-            ออเดอร์ล่าสุดเมื่อวันที่ {new Date().toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
+            {getDateRangeText()}
           </Typography>
         </Box>
       </Container>

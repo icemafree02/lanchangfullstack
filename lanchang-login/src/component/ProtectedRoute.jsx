@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       case 'manager':
         return '/firstpage'; // admin ก็เข้า ownerpage
       case 'employee':
-        return '/firstpage'; // admin ก็เข้า ownerpage
+        return '/firstpageem'; // admin ก็เข้า ownerpage
       
       default:
         return '/prelogin';

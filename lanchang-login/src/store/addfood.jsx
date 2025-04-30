@@ -51,7 +51,7 @@ function MenuForm() {
     formDataToSend.append('Menu_picture', formData.image);
 
     try {
-      const response = await fetch('http://localhost:3333/addmenu', { // เปลี่ยน URL ไปยัง endpoint ของ backend
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/addmenu', { // เปลี่ยน URL ไปยัง endpoint ของ backend
         method: 'POST',
         body: formDataToSend
       });

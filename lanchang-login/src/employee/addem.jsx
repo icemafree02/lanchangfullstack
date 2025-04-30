@@ -45,7 +45,7 @@ function EmployeeDetail() {
         console.log('Sending data:', Object.fromEntries(formDataToSend));
     
         try {
-            const response = await fetch('http://localhost:3333/addem', { 
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/addem', { 
                 method: 'POST',
                 body: formDataToSend
             });

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbarow } from "../owner/Navbarowcomponent/navbarow/index-ow";
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 
 const styles = {
   orderPage: {
@@ -79,7 +82,7 @@ function OrderDisplay() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:3333/getorders');
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/getorders');
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
@@ -95,7 +98,7 @@ function OrderDisplay() {
   const getstatus = async () => {
     try {
       const [statuses] = await Promise.all([
-        fetch('http://localhost:3333/getstatus')
+        fetch('https://lanchangbackend-production.up.railway.app/getstatus')
       ]);
       const [statusdata] = await Promise.all([
         statuses.json(),
@@ -132,33 +135,32 @@ function OrderDisplay() {
   return (
     <div style={styles.orderPage}>
       <Navbarow />
-      <h2 style={{ textAlign: 'center', margin: '20px 0' }}>ประวัติออเดอร์</h2>
+      <h1 style={{ textAlign: 'center', margin: '20px 0' }}>ประวัติออเดอร์</h1>
       
-      <div style={styles.filterContainer}>
-        <div>
-          <label htmlFor="startDate">วันที่เริ่มต้น: </label>
-          <input
-            type="date"
-            id="startDate"
-            style={styles.dateInput}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="endDate">วันที่สิ้นสุด: </label>
-          <input
-            type="date"
-            id="endDate"
-            style={styles.dateInput}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
-        <button onClick={filterOrdersDate} style={styles.filterButton}>กรองข้อมูล</button>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: '1rem', margin: '20px 0', padding: '0 1rem', alignItems: 'center' }}>
+        <TextField
+          label="วันที่เริ่มต้น"
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="วันที่สิ้นสุด"
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <Button
+          variant="contained"
+          onClick={filterOrdersDate}
+          sx={{ padding: '0.5rem 1rem', fontSize: '1rem', backgroundColor: '#007bff' }}
+        >
+          กรองข้อมูล
+        </Button>
+      </Box>
       
-
       <div style={styles.orderContainer}>
         {filteredOrders.map((order) => (
           <Link to={`/historydetail/${order.Order_id}`} key={order.Order_id} style={styles.orderItem}>

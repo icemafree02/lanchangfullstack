@@ -1,5 +1,8 @@
 const db = require("../Controllers/db");
 const connection = require("../Controllers/association");
+const { spawn } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
 
 exports.read = async (req, res) => {
   try {
@@ -63,7 +66,7 @@ exports.orders = (req, res) => {
   if (orderId) {
     this.updateOrder(req, res);
   } else {
-    const createOrderQuery = 'INSERT INTO `Order` (tables_id, Order_datetime, status_id) VALUES (?, NOW(), ?)';
+    const createOrderQuery = 'INSERT INTO `order` (tables_id, Order_datetime, status_id) VALUES (?, NOW(), ?)';
     const createOrderValues = [tableId, '3'];
 
     db.query(createOrderQuery, createOrderValues, (err, newOrderResult) => {
@@ -94,43 +97,47 @@ exports.updateOrder = (req, res) => {
 };
 
 exports.addItemsToOrder = (req, res) => {
-  const { orderId } = req.params;
+  const orderId = parseInt(req.params.orderId);
   const { cartItems } = req.body;
 
-  if (!cartItems || cartItems.length === 0) {
-    return res.status(400).json({ message: 'No items to add to the order' });
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    return res.status(400).json({ message: 'No items to add' });
   }
+
   const insertQuery = `
-    INSERT INTO Order_detail 
-    (Order_detail_quantity, 
-    Order_detail_price, 
-    Order_detail_takehome, 
-     Order_detail_additional,
+    INSERT INTO order_detail 
+    (
+      Order_detail_quantity, 
+      Order_detail_price, 
+      Order_detail_takehome, 
+      Order_detail_additional,
       Order_id, 
       Menu_id, 
-     Promotion_Menu_Item_id,
+      Promotion_Menu_Item_id,
       status_id,
-      Order_detail_created_at,
-      Noodle_type_id, 
-     Soup_id,
+      Soup_id,
+      Size_id,
       Meat_id,
-       Size_id) 
+      Noodle_type_id, 
+      Order_detail_created_at
+    ) 
     VALUES ?
   `;
+
   const values = cartItems.map(item => [
     item.quantity,
     item.price,
     item.homeDelivery || 0,
     item.additionalInfo || null,
     orderId,
-    item.type === 'menu' ? item.id : null,
-    null,
-    '3',
-    new Date(),
-    item.type === 'noodle' ? item.id.Noodle_type_id : null,
-    item.type === 'noodle' ? item.id.Soup_id : null,
-    item.type === 'noodle' ? item.id.Meat_id : null,
-    item.type === 'noodle' ? item.id.Size_id : null
+    item.type === 'menu' ? item.menuId : null,
+    null, // Promotion_Menu_Item_id
+    '3',  // status_id
+    item.type === 'noodle' && item.noodleDetails ? item.noodleDetails.Soup_id : null,
+    item.type === 'noodle' && item.noodleDetails ? item.noodleDetails.Size_id : null,
+    item.type === 'noodle' && item.noodleDetails ? item.noodleDetails.Meat_id : null,
+    item.type === 'noodle' && item.noodleDetails ? item.noodleDetails.Noodle_type_id : null,
+    new Date()
   ]);
 
   db.query(insertQuery, [values], (err, result) => {
@@ -139,32 +146,47 @@ exports.addItemsToOrder = (req, res) => {
       return res.status(500).json({ message: 'Error adding items to order' });
     }
 
-    res.json({ message: 'Items added to order successfully', affectedRows: result.affectedRows });
+    return res.status(200).json({ message: 'Items added successfully', inserted: result.affectedRows });
   });
 };
+
 
 exports.orderID = async (req, res) => {
   try {
     const { orderId } = req.params;
     db.query(
-      `SELECT od.*, 
-        CASE 
-          WHEN m.Menu_id IS NOT NULL THEN m.Menu_name
-          ELSE CONCAT(
-            nt.noodle_type_name, ' ',
-            s.soup_name, ' ',
-            mt.meat_name, ' ',       
-            sz.size_name      
-          )
-        END AS name,
-        COALESCE(m.Menu_price, od.Order_detail_price) AS price
-       FROM Order_detail od
-       LEFT JOIN Menu m ON od.Menu_id = m.Menu_id
-       LEFT JOIN noodle_type nt ON od.Noodle_type_id = nt.noodle_type_id
-       LEFT JOIN soup s ON od.Soup_id = s.soup_id
-       LEFT JOIN meat mt ON od.Meat_id = mt.meat_id
-       LEFT JOIN size sz ON od.Size_id = sz.size_id
-       WHERE od.Order_id = ?`,
+      `SELECT 
+  od.*, 
+  CASE 
+    WHEN m.Menu_id IS NOT NULL THEN m.Menu_name
+    ELSE CONCAT(nt.Noodle_type_name, ' ', s.Soup_name, ' ', mt.Meat_name, ' ', sz.Size_name)
+  END AS name,
+
+  COALESCE(m.Menu_price, od.Order_detail_price) AS base_price,
+
+  p.Promotion_name,
+  p.Discount_value
+
+FROM order_detail od
+LEFT JOIN menu m ON od.Menu_id = m.Menu_id
+LEFT JOIN noodle_type nt ON od.Noodle_type_id = nt.Noodle_type_id
+LEFT JOIN soup s ON od.Soup_id = s.Soup_id
+LEFT JOIN meat mt ON od.Meat_id = mt.Meat_id
+LEFT JOIN size sz ON od.Size_id = sz.Size_id
+
+LEFT JOIN promotion_menu_item pmi 
+  ON (
+      (pmi.Menu_id IS NOT NULL AND pmi.Menu_id = od.Menu_id) OR
+      (pmi.Menu_id IS NULL AND pmi.Noodlemenu = 1 AND od.Menu_id IS NULL)
+     )
+
+LEFT JOIN promotion p 
+  ON p.Promotion_id = pmi.Promotion_id 
+  AND p.Start_date <= NOW() 
+  AND p.End_date >= NOW()
+
+WHERE od.Order_id = ?
+`,
       [orderId],
       (err, results) => {
         if (err) {
@@ -174,6 +196,7 @@ exports.orderID = async (req, res) => {
         res.json(results);
       }
     );
+
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Server error');
@@ -183,7 +206,7 @@ exports.orderID = async (req, res) => {
 
 exports.callstaff = (req, res) => {
   const orderId = req.params.orderId;
-  const orderQuery = 'UPDATE `Order` SET status_id = ? WHERE Order_id = ?';
+  const orderQuery = 'UPDATE `order` SET status_id = ? WHERE Order_id = ?';
   const detailsQuery = 'UPDATE order_detail SET status_id = ? WHERE Order_id = ? AND status_id = ?';
 
   db.beginTransaction(err => {
@@ -231,61 +254,150 @@ exports.callstaff = (req, res) => {
 
 exports.getAssociation = async (req, res) => {
   try {
-    const query = `
+    // รับพารามิตเตอร์จาก api
+    const minSupport = parseFloat(req.query.min_support || 0.2);
+    const minConfidence = parseFloat(req.query.min_confidence || 0.5);
+    const minLift = parseFloat(req.query.min_lift || 1.0);
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+
+    let query = `
       SELECT 
-        order_detail.order_id, 
-        o.order_datetime, 
-        CASE 
-          WHEN menu.menu_id IS NOT NULL THEN menu.menu_name
-          ELSE "ก๋วยเตี๋ยว"
-        END AS item
-      FROM order_detail 
-      LEFT JOIN \`order\` AS o ON order_detail.order_id = o.order_id  
+        order_detail.order_id,
+        o.order_datetime,
+        COALESCE(menu.menu_name, 'ก๋วยเตี๋ยว') AS item
+      FROM order_detail
+      LEFT JOIN \`order\` AS o ON order_detail.order_id = o.order_id
       LEFT JOIN menu ON order_detail.menu_id = menu.menu_id
-      LEFT JOIN noodle_type ON order_detail.noodle_type_id = noodle_type.noodle_type_id
-      LEFT JOIN soup ON order_detail.soup_id = soup.soup_id
-      LEFT JOIN meat ON order_detail.meat_id = meat.meat_id
-      LEFT JOIN size ON order_detail.size_id = size.size_id
-      ORDER BY order_detail.order_id, o.order_datetime
     `;
 
-    const [GetTransaction] = await connection.query(query);
+    // ฟิลเตอร์วันที่
+    const queryParams = [];
+    if (startDate || endDate) {
+      const conditions = [];
 
-    console.log("Query Result:", GetTransaction);
+      if (startDate) {
+        conditions.push('o.order_datetime >= ?');
+        queryParams.push(startDate);
+      }
 
-    if (!GetTransaction) {
-      return res.json({
+      if (endDate) {
+        conditions.push('o.order_datetime <= ?');
+        queryParams.push(`${endDate} 23:59:59`);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+    }
+
+    query += ' ORDER BY order_detail.order_id, o.order_datetime';
+
+    const [transactions] = await connection.query(query, queryParams);
+
+    if (!transactions || transactions.length === 0) {
+      return res.status(200).json({
+        success: true,
         transactions: [],
-        totalTransactions: 0
+        totalTransactions: 0,
+        aprioriResults: {
+          frequentItemsets: [],
+          associationRules: []
+        }
       });
     }
 
-    const GroupbyOrderId = new Map();
-    GetTransaction.forEach(({ order_id, order_datetime, item }) => {
-      if (!GroupbyOrderId.has(order_id)) {
-        GroupbyOrderId.set(order_id, {
+    const groupedOrders = new Map();
+    transactions.forEach(({ order_id, order_datetime, item }) => {
+      if (!groupedOrders.has(order_id)) {
+        groupedOrders.set(order_id, {
           orderId: order_id,
-          Date: order_datetime,
-          items: []
+          date: order_datetime,
+          items: [],
         });
       }
-      GroupbyOrderId.get(order_id).items.push(item);
+      groupedOrders.get(order_id).items.push(item);
     });
 
-    const transactions = Array.from(GroupbyOrderId.values());
+    const transactionList = Array.from(groupedOrders.values());
 
-    console.log('transactions: ', transactions);
-
-    res.json({
-        transactions: transactions,
-        totalTransactions: transactions.length
+    // รอรับผลจาก apriori         //รันฟังชัน
+    const aprioriResults = await runPythonAprioriWithData(
+      transactionList,
+      minSupport,
+      minConfidence,
+      minLift
+    );
+    //ส่งค่ากลับ api
+    return res.status(200).json({
+      success: true,
+      transactions: transactionList,
+      totalTransactions: transactionList.length,
+      aprioriResults: aprioriResults
     });
 
   } catch (error) {
     console.error('Error in getAssociation:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    return res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      details: error.message,
+    });
   }
 };
+// ฟังชัน apriori รับออเดอร์และค่าต่างๆมา
+function runPythonAprioriWithData(transactions, minSupport, minConfidence, minLift) {
+  return new Promise((resolve, reject) => {
+    const pythonScriptPath = path.join(__dirname, './run_apriori.py');
+
+    // เรียกใช้ python
+    const pythonProcess = spawn('python', [pythonScriptPath], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+    });
+
+    // ส่งข้อมูลไป script
+    pythonProcess.stdin.write(JSON.stringify({
+      transactions: transactions.map(t => t.items),
+      minSupport,
+      minConfidence,
+      minLift
+    }));
+    pythonProcess.stdin.end();
+
+    let resultData = '';
+    let errorData = '';
+
+    // เก็บข้อมูลจาก script
+    pythonProcess.stdout.on('data', (data) => {
+      resultData += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      errorData += data.toString();
+    });
+
+    // ตรวจสอบ script
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Python script exited with code ${code}`);
+        console.error(`Error: ${errorData}`);
+        reject(new Error(`Python script error: ${errorData}`));
+      } else {
+        try {
+          const results = JSON.parse(resultData);
+          if (results.error) {
+            reject(new Error(results.error));
+          } else {
+            resolve(results);
+          }
+        } catch (err) {
+          reject(new Error(`Failed to parse Python output: ${err.message}`));
+        }
+      }
+    });
+  });
+}
 
 
 

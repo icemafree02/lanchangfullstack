@@ -96,7 +96,7 @@ function EmployeeList() {
 
     const fetchEmployees = async () => {
         try {
-            const response = await fetch('http://localhost:3333/getem');
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/getem');
             if (response.ok) {
                 const data = await response.json();
                 setEmployees(data);

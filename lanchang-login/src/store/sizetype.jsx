@@ -16,15 +16,18 @@ import {
     DialogContentText,
     DialogTitle
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 
 function Size() {
-    const [sizeData, setSizeData] = useState({ size: '' });
+    const [sizeData, setSizeData] = useState({ size: '', price: '' });
     const [sizes, setSizes] = useState([]);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -33,7 +36,7 @@ function Size() {
 
     const fetchSizeTypes = async () => {
         try {
-            const response = await fetch('http://localhost:3333/sizes');
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/sizes');
             const data = await response.json();
             setSizes(data);
         } catch (error) {
@@ -52,13 +55,32 @@ function Size() {
             alert('กรุณาพิมพ์ขนาด');
             return;
         }
+        
+        if (!sizeData.price || isNaN(sizeData.price)) {
+            alert('กรุณาใส่ราคาที่ถูกต้อง');
+            return;
+        }
+        
+        // Check for duplicate size name on the client side before sending the request
+        const isDuplicate = sizes.some(item => 
+            item.Size_name.toLowerCase() === sizeData.size.toLowerCase()
+        );
+        
+        if (isDuplicate) {
+            alert('ซุปนี้มีอยู่แล้ว กรุณาพิมพ์ขนาดใหม่');
+            return;
+        }
+         
         try {
-            const response = await fetch('http://localhost:3333/addsize', {
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/addsize', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ size: sizeData.size })
+                body: JSON.stringify({ 
+                    size: sizeData.size,
+                    sizeprice: parseInt(sizeData.price)
+                })
             });
     
             const data = await response.json();
@@ -67,7 +89,7 @@ function Size() {
             } else if (response.ok) {
                 if (data.status === 'ok') {
                     alert('เพิ่มขนาดสำเร็จ');
-                    setSizeData({ size: '' });
+                    setSizeData({ size: '', price: '' });
                     fetchSizeTypes();
                 } else {
                     alert('เกิดข้อผิดพลาดในการเพิ่มขนาด: ' + data.message);
@@ -81,6 +103,7 @@ function Size() {
         }
     };
 
+
     const handleDeleteClick = (item) => {
         setItemToDelete(item);
         setDeleteDialogOpen(true);
@@ -90,7 +113,7 @@ function Size() {
         if (!itemToDelete) return;
 
         try {
-            const response = await fetch(`http://localhost:3333/deletesize/${itemToDelete.Size_id}`, {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deletesize/${itemToDelete.Size_id}`, {
                 method: 'DELETE',
             });
 
@@ -109,6 +132,55 @@ function Size() {
         setItemToDelete(null);
     };
 
+    const handleEditClick = (item) => {
+        setItemToEdit({...item});
+        setEditDialogOpen(true);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setItemToEdit({ ...itemToEdit, [name]: value });
+    };
+
+    const handleEditSubmit = async () => {
+        if (!itemToEdit) return;
+
+        if (!itemToEdit.Size_name) {
+            alert('กรุณาพิมพ์ขนาด');
+            return;
+        }
+        
+        if (!itemToEdit.Size_price || isNaN(itemToEdit.Size_price)) {
+            alert('กรุณาใส่ราคาที่ถูกต้อง');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatesize/${itemToEdit.Size_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    size: itemToEdit.Size_name,
+                    price: parseInt(itemToEdit.Size_price)
+                })
+            });
+
+            if (response.ok) {
+                alert('แก้ไขไซส์สำเร็จ');
+                fetchSizeTypes();
+                setEditDialogOpen(false);
+                setItemToEdit(null);
+            } else {
+                throw new Error('Network response was not ok.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการแก้ไขไซส์');
+        }
+    };
+
     return (
         <Container maxWidth="md">
             <IconButton onClick={() => navigate(-1)}>
@@ -118,7 +190,7 @@ function Size() {
             <Typography variant="h5" gutterBottom>เพิ่มประเภทไซส์</Typography>
             <form onSubmit={handleSubmitSize}>
                 <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid item xs={6}>
                         <TextField
                             label="เพิ่มประเภทไซส์"
                             name="size"
@@ -127,6 +199,17 @@ function Size() {
                             fullWidth
                         />
                     </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            label="ราคา"
+                            name="price"
+                            type="number"
+                            value={sizeData.price}
+                            onChange={handleSizeChange}
+                            fullWidth
+                        />
+                    </Grid>
+                   
                     <Grid item xs={12}>
                         <Button type="submit" variant="contained" color="primary" fullWidth>
                             เพิ่มประเภทไซส์
@@ -141,8 +224,16 @@ function Size() {
             <List>
                 {sizes.map((type) => (
                     <ListItem key={type.Size_id}>
-                        <ListItemText primary={type.Size_name} />
+                        <ListItemText 
+                            primary={type.Size_name} 
+                            secondary={`${type.Size_price} บาท`}
+
+                           
+                        />
                         <ListItemSecondaryAction>
+                            <IconButton onClick={() => handleEditClick(type)}>
+                                <EditIcon/>
+                            </IconButton>
                             <IconButton
                                 edge="end"
                                 aria-label="delete"
@@ -155,6 +246,7 @@ function Size() {
                 ))}
             </List>
 
+            
             <Dialog
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
@@ -168,6 +260,41 @@ function Size() {
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>ยกเลิก</Button>
                     <Button onClick={handleDeleteConfirm} color="error">ลบ</Button>
+                </DialogActions>
+            </Dialog>
+
+           
+            <Dialog
+                open={editDialogOpen}
+                onClose={() => setEditDialogOpen(false)}
+            >
+                <DialogTitle>แก้ไขไซส์</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} style={{ marginTop: '8px' }}>
+                        <Grid item xs={12}>
+                            <TextField
+                                label="ขนาด"
+                                name="Size_name"
+                                value={itemToEdit?.Size_name || ''}
+                                onChange={handleEditChange}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                label="ราคา"
+                                name="Size_price"
+                                type="number"
+                                value={itemToEdit?.Size_price || ''}
+                                onChange={handleEditChange}
+                                fullWidth
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditDialogOpen(false)}>ยกเลิก</Button>
+                    <Button onClick={handleEditSubmit} color="primary">บันทึก</Button>
                 </DialogActions>
             </Dialog>
         </Container>

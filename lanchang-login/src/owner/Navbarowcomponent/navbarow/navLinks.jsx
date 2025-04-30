@@ -45,11 +45,10 @@ const Link = styled.a`
 export function NavLinks(props) {
   return (
 
-  
     <NavLinksContainer>
       <LinksWrapper>
         <LinkItem>
-          <Link href="#">หน้าหลัก</Link>
+          <Link href="./ownerpage">หน้าหลัก</Link>
         </LinkItem>
         <LinkItem>
           <Link href="./history">ประวัติออเดอร์</Link>

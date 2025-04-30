@@ -65,7 +65,7 @@ root.render(
             </ProtectedRoute>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <Expage />
             </ProtectedRoute>
           } />
@@ -127,22 +127,22 @@ root.render(
           } />
 
           <Route path="/noodle" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <Noodletype />
             </ProtectedRoute>
           } />
           <Route path="/soup" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <Souptype />
             </ProtectedRoute>
           } />
           <Route path="/size" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <Size />
             </ProtectedRoute>
           } />
           <Route path="/meat" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <MeatType />
             </ProtectedRoute>
           } />
@@ -153,7 +153,7 @@ root.render(
           } />
 
           <Route path="/history" element={
-            <ProtectedRoute allowedRoles={['owner']}>
+            <ProtectedRoute allowedRoles={['owner','manager']}>
               <History />
             </ProtectedRoute>
           } />
@@ -190,14 +190,11 @@ root.render(
             </ProtectedRoute>
           } />
 
-
-
           <Route path="/ordercustomer" element={
             <ProtectedRoute allowedRoles={['owner', 'manager', 'employee']}>
               <Ordercustomer />
             </ProtectedRoute>
           } />
-
 
           <Route path="/promotion" element={
             <ProtectedRoute allowedRoles={['owner']}>
@@ -208,8 +205,6 @@ root.render(
 
       </PersistGate>
     </Provider>
-
-
   </BrowserRouter>
 );
 

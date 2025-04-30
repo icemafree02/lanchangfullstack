@@ -16,16 +16,19 @@ import {
     DialogContentText,
     DialogTitle
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 
 function Meat() {
-    const [meatData, setMeatData] = useState({ meat: '' });
+    const [meatData, setMeatData] = useState({ meat: '', price: '' });
     const [meats, setMeats] = useState([]);
     const navigate = useNavigate();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState(null);
 
     useEffect(() => {
         fetchMeatTypes();
@@ -33,7 +36,7 @@ function Meat() {
 
     const fetchMeatTypes = async () => {
         try {
-            const response = await fetch('http://localhost:3333/meats');
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/meats');
             const data = await response.json();
             setMeats(data);
         } catch (error) {
@@ -52,13 +55,22 @@ function Meat() {
             alert('กรุณาพิมพ์ชนิดเนื้อ');
             return;
         }
+        
+        if (!meatData.price || isNaN(meatData.price)) {
+            alert('กรุณาใส่ราคาที่ถูกต้อง');
+            return;
+        }
+
         try {
-            const response = await fetch('http://localhost:3333/addmeat', {
+            const response = await fetch('https://lanchangbackend-production.up.railway.app/addmeat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ meat: meatData.meat })
+                body: JSON.stringify({ 
+                    meat: meatData.meat,
+                    meatprice: parseInt(meatData.price)
+                })
             });
     
             const data = await response.json();
@@ -67,7 +79,7 @@ function Meat() {
             } else if (response.ok) {
                 if (data.status === 'ok') {
                     alert('เพิ่มเนื้อสำเร็จ');
-                    setMeatData({ meat: '' });
+                    setMeatData({ meat: '', price: '' });
                     fetchMeatTypes();
                 } else {
                     alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อ: ' + data.message);
@@ -77,7 +89,7 @@ function Meat() {
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการเพิ่มเชนิดเนื้อ');
+            alert('เกิดข้อผิดพลาดในการเพิ่มชนิดเนื้อ');
         }
     };
 
@@ -90,28 +102,85 @@ function Meat() {
         if (!itemToDelete) return;
     
         try {
-            const response = await fetch(`http://localhost:3333/deleteMeat/${itemToDelete.Meat_id}`, {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deleteMeat/${itemToDelete.Meat_id}`, {
                 method: 'DELETE',
             });
     
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'ok') {
-                    alert('ลบชนิดเส้นสำเร็จ');
+                    alert('ลบชนิดเนื้อสำเร็จ');
                     fetchMeatTypes();
                 } else {
-                    alert('เกิดข้อผิดพลาดในการลบชนิดเส้น: ' + data.message);
+                    alert('เกิดข้อผิดพลาดในการลบชนิดเนื้อ: ' + data.message);
                 }
             } else {
                 throw new Error('Network response was not ok.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการลบชนิดเส้น');
+            alert('เกิดข้อผิดพลาดในการลบชนิดเนื้อ');
         }
     
         setDeleteDialogOpen(false);
         setItemToDelete(null);
+    };
+
+    const handleEditClick = (item) => {
+        setItemToEdit({...item});
+        setEditDialogOpen(true);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setItemToEdit({ ...itemToEdit, [name]: value });
+    };
+
+    const handleEditSubmit = async () => {
+        if (!itemToEdit) return;
+
+        if (!itemToEdit.Meat_name) {
+            alert('กรุณาพิมพ์ชนิดเนื้อ');
+            return;
+        }
+        
+        if (!itemToEdit.Meat_price || isNaN(itemToEdit.Meat_price)) {
+            alert('กรุณาใส่ราคาที่ถูกต้อง');
+            return;
+        }
+        const isDuplicate = meats.some(item => 
+            item.Meat_name.toLowerCase() === meatData.meat.toLowerCase()
+        );
+        
+        if (isDuplicate) {
+            alert('เนื้อนี้มีอยู่แล้ว กรุณาพิมพ์ใหม่');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatemeat/${itemToEdit.Meat_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    meat: itemToEdit.Meat_name,
+                    price: parseInt(itemToEdit.Meat_price)
+                })
+            });
+
+            if (response.ok) {
+                alert('แก้ไขชนิดเนื้อสำเร็จ');
+                fetchMeatTypes();
+                setEditDialogOpen(false);
+                setItemToEdit(null);
+            } else {
+                throw new Error('Network response was not ok.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการแก้ไขชนิดเนื้อ');
+        }
     };
 
     return (
@@ -123,11 +192,21 @@ function Meat() {
             <Typography variant="h5" gutterBottom>เพิ่มชนิดเนื้อ</Typography>
             <form onSubmit={handleSubmitMeat}>
                 <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid item xs={6}>
                         <TextField
                             label="พิมพ์ชนิดเนื้อ"
                             name="meat"
                             value={meatData.meat}
+                            onChange={handleMeatChange}
+                            fullWidth
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            label="ราคา"
+                            name="price"
+                            type="number"
+                            value={meatData.price}
                             onChange={handleMeatChange}
                             fullWidth
                         />
@@ -146,8 +225,14 @@ function Meat() {
             <List>
                 {meats.map((type) => (
                     <ListItem key={type.Meat_id}>
-                        <ListItemText primary={type.Meat_name} />
+                        <ListItemText 
+                            primary={type.Meat_name} 
+                            secondary={`${type.Meat_price} บาท`}
+                        />
                         <ListItemSecondaryAction>
+                            <IconButton onClick={() => handleEditClick(type)}>
+                                <EditIcon/>
+                            </IconButton>
                             <IconButton
                                 edge="end"
                                 aria-label="delete"
@@ -167,12 +252,46 @@ function Meat() {
                 <DialogTitle>ยืนยันการลบ</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        คุณแน่ใจหรือไม่ที่จะลบ {itemToDelete?.Noodle_type_name}?
+                        คุณแน่ใจหรือไม่ที่จะลบ {itemToDelete?.Meat_name}?
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>ยกเลิก</Button>
                     <Button onClick={handleDeleteConfirm} color="error">ลบ</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={editDialogOpen}
+                onClose={() => setEditDialogOpen(false)}
+            >
+                <DialogTitle>แก้ไขชนิดเนื้อ</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} style={{ marginTop: '8px' }}>
+                        <Grid item xs={12}>
+                            <TextField
+                                label="ชนิดเนื้อ"
+                                name="Meat_name"
+                                value={itemToEdit?.Meat_name || ''}
+                                onChange={handleEditChange}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                label="ราคา"
+                                name="Meat_price"
+                                type="number"
+                                value={itemToEdit?.Meat_price || ''}
+                                onChange={handleEditChange}
+                                fullWidth
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditDialogOpen(false)}>ยกเลิก</Button>
+                    <Button onClick={handleEditSubmit} color="primary">บันทึก</Button>
                 </DialogActions>
             </Dialog>
         </Container>

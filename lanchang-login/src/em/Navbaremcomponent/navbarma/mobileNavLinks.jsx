@@ -95,20 +95,12 @@ export function MobileNavLinks(props) {
           <LinkItem>
             <Link href="#">พนักงาน</Link>
           </LinkItem>
-          
           <LinkItem>
             <Link href="./dashboard">รายงาน</Link>
           </LinkItem>
           <LinkItem>
             <Link href="./menupage">รายการอาหาร</Link>
           </LinkItem>
-         
-            
-        
-
-
-
-
           <Marginer />
         <AccessibilityWrapper>
           <Accessibility />

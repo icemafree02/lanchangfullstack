@@ -2,31 +2,32 @@ import React from "react";
 import styled from "styled-components";
 
 const NavLinksContainer = styled.div`
-  height: 100%;
+  width: 100%;
   display: flex;
-  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  overflow:none;
 `;
 
 const LinksWrapper = styled.ul`
   margin: 0;
   padding: 0;
   display: flex;
-  height: 100%;
+  width: 100%;
+  max-width: 1200px; /* optional, to limit the spread */
+  justify-content: space-around; /* spread items evenly */
+  align-items: center;
   list-style: none;
-  flex-wrap: wrap: 
-  justify-content: center;
+  white-space: nowrap; /* keep links on one line */
 `;
 
 const LinkItem = styled.li`
-  height: 100%;
-  padding: 0 1.1em;
-  color: #222;
+  padding: 0 1em;
   font-weight: 500;
-  font-size: 14px;
-  align-items: center;
-  justify-content: center;
+  font-size: 16px;
   display: flex;
-  white-space: flex;
+  align-items: center;
+  height: 60px;
   border-top: 2px solid transparent;
   transition: all 220ms ease-in-out;
 
@@ -37,38 +38,37 @@ const LinkItem = styled.li`
 
 const Link = styled.a`
   text-decoration: none;
-  color: inherit;
-  font-size: inherit;
+  color: #222;
 `;
 
-export function NavLinks(props) {
+export function NavLinks() {
   return (
     <NavLinksContainer>
       <LinksWrapper>
         <LinkItem>
-          <Link href="#">หน้าหลัก</Link>
+          <Link href="./firstpage">หน้าหลัก</Link>
         </LinkItem>
         <LinkItem>
-          <Link href="#">ประวัติออเดอร์</Link>
+          <Link href="/history">ประวัติออเดอร์</Link>
         </LinkItem>
         <LinkItem>
-            <Link href="#">ชำระเงิน</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">ดูรายการอาหารที่สั่ง</Link>
-          </LinkItem>
-          <LinkItem>
-            <Link href="#">รายการอาหารที่ทำเสร็จเเล้ว</Link>
-          </LinkItem>
-
+          <Link href="/checkbin">ชำระเงิน</Link>
+        </LinkItem>
         <LinkItem>
-          <Link href="./dashboard">รายงาน</Link>
+          <Link href="/order">ดูรายการอาหารที่สั่ง</Link>
         </LinkItem>
         <LinkItem>
           <Link href="./menupage">รายงานอาหาร</Link>
         </LinkItem>
-        
-
+        <LinkItem>
+          <Link href="./dashboard">รายงาน</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./ordercustomer">สั่งอาหารให้ลูกค้า</Link>
+        </LinkItem>
+        <LinkItem>
+          <Link href="./table">โต๊ะ</Link>
+        </LinkItem>
       </LinksWrapper>
     </NavLinksContainer>
   );

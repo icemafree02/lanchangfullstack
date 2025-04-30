@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import '../menu_order.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import lanchan from '../image/lanchan.png';
 import cart from '../image/cart.jpg';
-import { fetchMenuData, fetchMenuItemDetail } from '../slice/menuslice';
+import {  fetchMenuItemDetail } from '../slice/menuslice';
 import { setSelectedNoodle } from '../slice/noodleslice';
 import { setSelectedTable } from '../slice/tableslice';
 
@@ -14,11 +13,7 @@ const MenuOrder = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const selectedTable = useSelector(state => state.table.selectedTable);
-  const menuItems = useSelector(state => state.menu.items);
-  const noodleItems = useSelector(state => state.noodle.items);
-  const cartItems = useSelector(state => state.cart.items);
-  const location = useLocation();
-  const { orderId } = location.state || {};
+  const orderId = useSelector(state => state.cart.orderId);
   const [originalItems, setOriginalItems] = useState([]);
   const [isNoodleCustomization, setIsNoodleCustomization] = useState(false);
   const [noodleOptions, setNoodleOptions] = useState({
@@ -34,10 +29,13 @@ const MenuOrder = () => {
   const [sizes, setSizes] = useState([]);
   const [meats, setMeats] = useState([]);
   const [noodleTypes, setNoodleTypes] = useState([]);
+  const [cartitems, setCartitems] = useState(0);
+
+  console.log(cartitems)
 
   const fetchInitialMenu = async () => {
     try {
-      const response = await fetch('http://localhost:3333/menu');
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
       const menuItems = await response.json();
       setFilteredItems({ noodles: [], menus: menuItems });
       setOriginalItems(menuItems);
@@ -60,12 +58,10 @@ const MenuOrder = () => {
 
   console.log("Current Redux state:", selectedTable);
 
-
-
-
   useEffect(() => {
     fetchInitialMenu();
     fetchAllComponent();
+    getTotalCartItems();
   }, []);
 
 
@@ -90,7 +86,16 @@ const MenuOrder = () => {
   };
 
   const getTotalCartItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    fetch(`https://lanchangbackend-production.up.railway.app/gettotalcartitems/${orderId}`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Total cart items:', data.total_items);
+        setCartitems(data.total_items);
+      })
+      .catch(error => {
+        console.error('Error fetching total cart items:', error);
+        setCartitems(0);
+      });
   };
 
   const handleSearch = (event) => {
@@ -121,13 +126,13 @@ const MenuOrder = () => {
           let response;
           switch (category) {
             case 'beverage':
-              response = await fetch('http://localhost:3333/menu');
+              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
               break;
             case 'appetizer':
-              response = await fetch('http://localhost:3333/menu');
+              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
               break;
             case 'other':
-              response = await fetch('http://localhost:3333/menu');
+              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
               break;
             default:
               setFilteredItems({ noodles: [], menus: [] });
@@ -160,7 +165,7 @@ const MenuOrder = () => {
       setIsNoodleCustomization(false);
       setActiveCategory('all');
 
-      const response = await fetch('http://localhost:3333/menu');
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
       const data = await response.json();
       setFilteredItems({ noodles: [], menus: data });
 
@@ -172,10 +177,10 @@ const MenuOrder = () => {
   const fetchAllComponent = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('http://localhost:3333/soups'),
-        fetch('http://localhost:3333/sizes'),
-        fetch('http://localhost:3333/meats'),
-        fetch('http://localhost:3333/noodletypes')
+        fetch('https://lanchangbackend-production.up.railway.app/soups'),
+        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
+        fetch('https://lanchangbackend-production.up.railway.app/meats'),
+        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -274,7 +279,7 @@ const MenuOrder = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:3333/noodle', {
+      const response = await fetch('https://lanchangbackend-production.up.railway.app/noodle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -380,7 +385,7 @@ const MenuOrder = () => {
         {isNoodleCustomization ? renderNoodleCustomization() : (
           filteredItems.menus.map(item => (
             <div key={item.Menu_id} className="menu-item" onClick={() => handleMenuItemClick(item)}>
-              <img className="menu-picture" src={`http://localhost:3333/menuimage/${item.Menu_id}`} alt={item.Menu_name} />
+              <img className="menu-picture" src={`https://lanchangbackend-production.up.railway.app/menuimage/${item.Menu_id}`} alt={item.Menu_name} />
               <div className="menu-name">{item.Menu_name}</div>
               <div className="menu-price">{item.Menu_price} บาท</div>
             </div>
@@ -392,7 +397,7 @@ const MenuOrder = () => {
         <div className="cart" onClick={handleCartClick}>
           <img src={cart} id="cartpic" alt="Cart" />
         </div>
-        <div className="numberorder">{getTotalCartItems()}</div>
+        <div className="numberorder">{cartitems}</div>
       </div>
     </div>
   );

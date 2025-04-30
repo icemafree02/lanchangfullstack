@@ -2,359 +2,208 @@ import React, { useEffect, useState } from 'react';
 import { Navbarow } from "../owner/Navbarowcomponent/navbarow/index-ow";
 import './association.css';
 
-class Apriori {
-  constructor(transactions, minSupport = 0.2, minConfidence = 0.5, lift = 0) {
-    this.transactions = transactions;
-    this.minSupport = minSupport;
-    this.minConfidence = minConfidence;
-    this.itemsets = {};
-    this.lift = lift;
-    this.rules = [];
-  }
-  generateFrequentItemsets() {
-    const items = new Set();
-    console.log(this.transactions);
-    this.transactions.forEach(transaction => {
-      transaction.forEach(item => items.add(item));
-    });
-    // console.log(items);
-    const frequentItems = {};
-
-    for (const item of items) {
-      // console.log(item);
-      const support = this.calculateSupport([item]);
-      if (support >= this.minSupport) {
-        frequentItems[JSON.stringify([item])] = support;
-        //    console.log(frequentItems);
-      }
-    }
-
-    // console.log(frequentItems);
-    return frequentItems;
-  }
-
-  calculateSupport(itemset) {
-    //  console.log(itemset);
-    let count = 0;
-    for (const transaction of this.transactions) {
-      if (itemset.every(item => transaction.includes(item))) {
-        count++;
-      }
-    }
-
-    return count / this.transactions.length;
-  }
-  // run Apriori
-  run() {
-    let k = 1;
-    let frequentItemsets = this.generateFrequentItemsets();
-    console.log(frequentItemsets);
-
-    this.itemsets = { ...frequentItemsets };
-    console.log(this.itemsets);
-    //console.log(Object.keys(frequentItemsets));
-    while (Object.keys(frequentItemsets).length > 0) {
-      k++;
-      frequentItemsets = this.generateCandidateItemsets(frequentItemsets, k);
-      //console.log(Object.assign(this.itemsets, frequentItemsets));
-      Object.assign(this.itemsets, frequentItemsets);
-    }
-
-    this.generateRules();
-    return {
-      itemsets: this.itemsets,
-      rules: this.rules
-    };
-  }
-
-  generateCandidateItemsets(frequentItemsets, k) {
-    const candidates = {};
-    const prevItemsets = Object.keys(frequentItemsets).map(key => JSON.parse(key));
-    console.log(prevItemsets);
-
-    for (let i = 0; i < prevItemsets.length; i++) {
-      for (let j = i + 1; j < prevItemsets.length; j++) {
-        //console.log(i,j);
-        const itemset1 = prevItemsets[i];
-        const itemset2 = prevItemsets[j];
-
-        //console.log(itemset2);
-        //console.log(itemset2[0]);
-
-        //เช็คว่าค่าตรงกันมั้ย
-        let join = true;
-        console.log(k - 2);
-        for (let l = 0; l < k - 2; l++) {
-          console.log(l);
-          console.log(itemset1[l])
-          console.log(itemset2[l])
-
-          if (itemset1[l] !== itemset2[l]) {
-            join = false;
-            break;
-          }
-        }
-        console.log(itemset1[k - 2], itemset2[k - 2]);
-
-        if (join && itemset1[k - 2] < itemset2[k - 2]) {
-          const newItemset = [...itemset1.slice(0, k - 1), itemset2[k - 2]];
-          //console.log(newItemset);
-          const support = this.calculateSupport(newItemset);
-          if (support >= this.minSupport) {
-            candidates[JSON.stringify(newItemset)] = support;
-            console.log(candidates);
-          }
-        }
-      }
-    }
-    return candidates;
-  }
-
-  generateRules() {
-    this.rules = [];
-
-    for (const item in this.itemsets) {
-      console.log(item);
-      const itemset = JSON.parse(item);
-      if (itemset.length < 2) continue;
-
-      for (let i = 1; i < Math.pow(2, itemset.length) - 1; i++) {
-        const firstitem = [];
-        const seconditem = [];
-
-        for (let j = 0; j < itemset.length; j++) {
-          if ((i & (1 << j)) > 0) {
-            firstitem.push(itemset[j]);
-          } else {
-            seconditem.push(itemset[j]);
-          }
-        }
-
-        if (firstitem.length > 0 && seconditem.length > 0) {
-          const confidence = this.itemsets[item] / this.calculateSupport(firstitem);
-          const lift = this.itemsets[item] / (this.calculateSupport(firstitem) * this.calculateSupport(seconditem));
-          if (confidence >= this.minConfidence && lift) {
-            this.rules.push({
-              firstitem,
-              seconditem,
-              support: this.itemsets[item],
-              confidence,
-              lift
-            });
-          }
-        }
-      }
-    }
-
-    //กรองค่าคอนฟิเด้นจากน้อยไปมาก
-    this.rules.sort((a, b) => b.confidence - a.confidence);
-  }
-}
-
 const Association = () => {
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [minSupport, setMinSupport] = useState(0.02);
+  const [error, setError] = useState(null);
+  const [results, setResults] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+
+  // Filter parameters
+  const [minSupport, setMinSupport] = useState(0.2);
   const [minConfidence, setMinConfidence] = useState(0.5);
+  const [minLift, setMinLift] = useState(1);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [error, setError] = useState(null);
 
-  const fetchTransactions = async () => {
+  // Main function to fetch apriori results
+  const fetchAprioriResults = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('http://localhost:3333/association');
+      // Create URLSearchParams object for query parameters
+      const params = new URLSearchParams({
+        min_support: minSupport,
+        min_confidence: minConfidence,
+        min_lift: minLift,
+      });
+
+      // Only add date parameters if they exist
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+
+      // Append query string to URL
+      const response = await fetch(`http://localhost:3333/association?${params.toString()}`);
       const data = await response.json();
 
-      if (data) {
-        setAllTransactions(data.transactions);
-        setFilteredTransactions(data.transactions);
+      if (data.success) {
+        setResults(data.aprioriResults);
+        setTransactions(data.transactions);
       } else {
-        setError(data.error || 'Failed to retrieve transaction data');
+        setError(data.error || 'Failed to fetch results');
       }
     } catch (err) {
-      setError(err.message || 'An error occurred while fetching data');
+      setError('Error connecting to server. Please try again.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const filterTransactionsDate = () => {
-    let filtered = [...allTransactions];
-
-    if (startDate) {
-      filtered = filtered.filter(transaction =>
-        new Date(transaction.Date) >= new Date(startDate)
-      );
-    }
-
-    if (endDate) {
-      filtered = filtered.filter(transaction =>
-        new Date(transaction.Date) <= new Date(endDate)
-      );
-    }
-
-    setFilteredTransactions(filtered);
-    if (filtered) {
-      const transactionItems = filtered.map(t => t.items);
-      const apriori = new Apriori(transactionItems, minSupport, minConfidence);
-      const result = apriori.run();
-      setRules(result.rules);
-    } else {
-      setRules([]);
-    }
-  };
-
-  const RunAnalysis = () => {
-    if (filteredTransactions.length > 0) {
-      const transactionItems = filteredTransactions.map(t => t.items);
-      const apriori = new Apriori(transactionItems, minSupport, minConfidence);
-      const result = apriori.run();
-      setRules(result.rules);
-    }
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    fetchAprioriResults();
   };
 
   return (
     <div>
       <Navbarow />
-      <div className="container">
-        <div className="title">
-          <h1>วิเคราะห์ความสัมพันธ์รายการอาหาร</h1>
-        </div>
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        <div className="controls-container">
-          <div className="controls-grid">
-            <div className="control-item">
-              <label>วันที่เริ่มต้น:</label>
+      <div className="apriori-container">
+        <h1>วิเคราะห์ความสัมพันธ์เมนูอาหาร</h1>
+        <form onSubmit={handleSubmit} className="parameters-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="startDate">วันที่เริ่ม :</label>
               <input
+                id="startDate"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="date-input"
               />
             </div>
-            <div className="control-item">
-              <label>วันที่สิ้นสุด:</label>
+
+            <div className="form-group">
+              <label htmlFor="endDate">วันที่สิ้นสุด :</label>
               <input
+                id="endDate"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="date-input"
               />
             </div>
+          </div>
 
-    
-            <div className="control-item">
-              <label>
-                Minimum Support ({(minSupport * 100).toFixed(1)}%)
-              </label>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="minSupport">ค่า Support ขั้นต่ำ :</label>
               <input
-                type="range"
+                id="minSupport"
+                type="number"
+                step="0.01"
                 min="0.01"
                 max="1"
-                step="0.01"
                 value={minSupport}
                 onChange={(e) => setMinSupport(parseFloat(e.target.value))}
+                className="numeric-input"
               />
-              <p className="helper-text">
-                เมนูต้องปรากฏอย่างน้อย {(minSupport * 100).toFixed(1)}% ของออเดอร์ทั้งหมด
-              </p>
+              <span className="hint">กำหนดค่าให้อยู่ระหว่าง 0 และ 1 (0.01 = 1%)</span>
             </div>
 
-            <div className="control-item">
-              <label>
-                Minimum Confidence ({(minConfidence * 100).toFixed(1)}%)
-              </label>
+            <div className="form-group">
+              <label htmlFor="minConfidence">ค่า Confidence ขั้นต่ำ :</label>
               <input
-                type="range"
-                min="0.1"
-                max="1"
+                id="minConfidence"
+                type="number"
                 step="0.01"
+                min="0.01"
+                max="1"
                 value={minConfidence}
                 onChange={(e) => setMinConfidence(parseFloat(e.target.value))}
+                className="numeric-input"
               />
-              <p className="helper-text">
-                กฎต้องเป็นจริงอย่างน้อย {(minConfidence * 100).toFixed(1)}% ของกรณี
-              </p>
+              <span className="hint">กำหนดค่าให้อยู่ระหว่าง 0 และ 1 (0.01 = 1%)</span>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="minLift">ค่า Lift ขั้นต่ำ :</label>
+              <input
+                id="minLift"
+                type="number"
+                step="0.1"
+                min="1"
+                value={minLift}
+                onChange={(e) => setMinLift(parseFloat(e.target.value))}
+                className="numeric-input"
+              />
+              <span className="hint">หากค่าเกิน 1 หมายถึงความสัมพันธ์อยู่ในเชิงบวก</span>
             </div>
           </div>
-
-          <div className="button-container">
-            <button
-              onClick={filterTransactionsDate}
-              style={{color:'white',backgroundColor:'#007bff',border:'none',padding:'10px',cursor:'pointer'}}
-            >กรองข้อมูล
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'กำลังคำนวน...' : 'คำนวนผลลัพธ์'}
             </button>
-            <button
-              onClick={RunAnalysis}
-              style={{color:'white',backgroundColor:'darkgreen',border:'none',padding:'10px',cursor:'pointer'}}
-            >วิเคราะห์ความสัมพันธ์
-            </button>
+            <h2>จำนวนออเดอร์ทั้งหมด : {transactions.length} รายการ</h2>
+            {startDate && endDate && (
+              <h3>ตั้งแต่วันที่ : {startDate} ถึง {endDate}</h3>
+            )}
           </div>
+        </form>
 
-          <div className="transaction-count">
-            ข้อมูลทั้งหมด: {allTransactions.length} ออเดอร์ | หลังกรอง: {filteredTransactions.length} ออเดอร์
-          </div>
-        </div>
+        {error && <div className="error-message">{error}</div>}
 
-        <div className="rules-container">
-          <h2 className="rules-title">กฎความสัมพันธ์</h2>
-
-          {rules.length === 0 ? (
-            <p className="rules-empty">
-              {filteredTransactions.length === 0
-                ? "ยังไม่มีข้อมูลธุรกรรมหลังการกรอง"
-                : "ไม่พบกฎความสัมพันธ์ที่ตรงตามเงื่อนไข"}
-            </p>
-          ) : (
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>หากลูกค้าสั่ง</th>
-                    <th>มักจะสั่งเพิ่ม</th>
-                    <th className="text-right">Support</th>
-                    <th className="text-right">Confidence</th>
-                    <th className="text-right">Lift</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rules.map((rule, index) => (
-                    <tr key={index}>
-                      <td>{rule.firstitem}</td>
-                      <td>{rule.seconditem}</td>
-                      <td className="text-right">
-                        {(rule.support * 100).toFixed(2)}%
-                      </td>
-                      <td className="text-right">
-                        {(rule.confidence * 100).toFixed(2)}%
-                      </td>
-                      <td className="text-right">
-                        {(rule.lift.toFixed(2))}%
-                      </td>
+        {results && (
+          <div className="results-container">
+            <div className="association-rules">
+              <h2>ผลลัพธ์ความสัมพันธ์เมนูอาหาร</h2>
+              {(!results.associationRules || results.associationRules.length === 0) ? (
+                <p>ไม่พบผลลัพธ์ควาสัมพันธ์เมนู ลดระดับค่าต่างๆเพื่อแสดงผลลัพธ์ใหม่</p>
+              ) : (
+                <table className="rules-table">
+                  <thead>
+                    <tr>
+                      <th>หากลูกค้าสั่ง</th>
+                      <th>แล้วจะสั่ง</th>
+                      <th>Support</th>
+                      <th>Confidence</th>
+                      <th>Lift</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody id='rules-table-body'>
+                    {results.associationRules.map((rule, index) => (
+                      <tr key={index}>
+                        <td>{rule.lhs.join(', ')}</td>
+                        <td>{rule.rhs.join(', ')}</td>
+                        <td>{(rule.support * 100).toFixed(2)}%</td>
+                        <td>{(rule.confidence * 100).toFixed(2)}%</td>
+                        <td>{rule.lift.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-          )}
-        </div>
+
+            <div className="frequent-itemsets">
+              <h2>รายการเมนูที่ถูกสั่งบ่อย</h2>
+              {(!results.frequentItemsets || results.frequentItemsets.length === 0) ? (
+                <p>ไม่มีรายการเมนู</p>
+              ) : (
+                <table className="itemsets-table">
+                  <thead>
+                    <tr>
+                      <th>เมนู</th>
+                      <th>Support</th>
+                    </tr>
+                  </thead>
+                  <tbody id='itemsets-table-body'>
+                    {results.frequentItemsets.map((itemset, index) => (
+                      <tr key={index}>
+                        <td>{itemset.items.join(', ')}</td>
+                        <td>{(itemset.support * 100).toFixed(2)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
+}
 
 export default Association;

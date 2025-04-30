@@ -6,16 +6,21 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Title from './Title';
 
-export default function TopNoodleMenus() {
+export default function TopNoodleMenus({ startDate, endDate }) {
   const [topNoodleMenus, setTopNoodleMenus] = useState([]);
 
   useEffect(() => {
     fetchTopNoodleMenus();
-  }, []);
+  }, [startDate, endDate]);
+  
 
   const fetchTopNoodleMenus = async () => {
     try {
-      const response = await fetch('http://localhost:3333/getTopNoodleMenus');
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+
+      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getTopNoodleMenus?${queryParams.toString()}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -23,12 +28,13 @@ export default function TopNoodleMenus() {
       setTopNoodleMenus(data);
     } catch (error) {
       console.error('Error fetching top noodle menus:', error);
+      setTopNoodleMenus([]);
     }
   };
 
   return (
     <React.Fragment>
-      <Title >ก๋วยเตี่ยวที่สั่งมากที่สุด</Title>
+      <Title>ก๋วยเตี๋ยวที่สั่งมากที่สุด</Title>
       <Table size="small">
         <TableHead>
           <TableRow>
