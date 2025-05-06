@@ -40,7 +40,7 @@ export default function SignUp() {
         fname: data.get('firstName'),
         lname: data.get('lastName'),
       }
-      fetch('https://lanchangbackend-production.up.railway.app/register',{
+      fetch('http://localhost:3333/register',{
         method : 'post',
         headers: {
           'Content-Type' : 'application/json',

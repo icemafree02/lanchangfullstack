@@ -143,7 +143,7 @@ function OrderDisplay() {
     try {
       await Promise.all(
         selectedItems.map(itemId =>
-          fetch(`https://lanchangbackend-production.up.railway.app/updateorderstatus/${itemId}`, {
+          fetch(`http://localhost:3333/updateorderstatus/${itemId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 5 })
@@ -188,7 +188,7 @@ function OrderDisplay() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/getServedOrders');
+      const response = await fetch('http://localhost:3333/getServedOrders');
       if (response.ok) {
         const data = await response.json();
         console.log('All orders:', data);
@@ -199,7 +199,7 @@ function OrderDisplay() {
           console.log(`\nProcessing Order ID: ${order.Order_id}`);
           console.log('Order timestamp:', order.Order_datetime);
 
-          const detailsResponse = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${order.Order_id}`);
+          const detailsResponse = await fetch(`http://localhost:3333/getorderdetail/${order.Order_id}`);
           const details = await detailsResponse.json();
           setNoodleMenu(details);
           console.log('Order details:', details);
@@ -250,7 +250,7 @@ function OrderDisplay() {
   const fetchMenus = async () => {
     try {
       const otherRes = await 
-        fetch('https://lanchangbackend-production.up.railway.app/getmenu');
+        fetch('http://localhost:3333/getmenu');
       const otherData = await (otherRes.json());
       setOtherMenu(otherData);
       console.log('Other Menu:', otherData);    
@@ -262,10 +262,10 @@ function OrderDisplay() {
   const fetchAllData = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('https://lanchangbackend-production.up.railway.app/soups'),
-        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-        fetch('https://lanchangbackend-production.up.railway.app/meats'),
-        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+        fetch('http://localhost:3333/soups'),
+        fetch('http://localhost:3333/sizes'),
+        fetch('http://localhost:3333/meats'),
+        fetch('http://localhost:3333/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -339,7 +339,7 @@ const getItemDetails = (orderDetail) => {
 
   const confirmUpdate = async () => {
     try {
-      const response = await fetch(`https://lanchangbackend-production.up.railway.app/updateorderstatus/${updatingItemId}`, {
+      const response = await fetch(`http://localhost:3333/updateorderstatus/${updatingItemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

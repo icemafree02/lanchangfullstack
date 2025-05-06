@@ -50,7 +50,7 @@ export default function NoodleTypeStats({ startDate, endDate }) {
         const queryParams = new URLSearchParams();
         if (startDate) queryParams.append('startDate', startDate);
         if (endDate) queryParams.append('endDate', endDate);
-        fetch(`https://lanchangbackend-production.up.railway.app/allnoodletypes?${queryParams.toString()}`)
+        fetch(`http://localhost:3333/allnoodletypes?${queryParams.toString()}`)
             .then(response => {
                 if (!response.ok) throw new Error('ไม่มีการตอบสนอง');
                 return response.json();

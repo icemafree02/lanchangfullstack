@@ -97,7 +97,7 @@ function HistoryDetail() {
 
     const fetchOrder = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/getorders');
+            const response = await fetch('http://localhost:3333/getorders');
             if (response) {
                 const data = await response.json();
                 setOrder(data);
@@ -111,7 +111,7 @@ function HistoryDetail() {
 
     const fetchOrderDetails = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${id}`);
+            const response = await fetch(`http://localhost:3333/getorderdetail/${id}`);
             if (!response.ok) throw new Error('Failed to fetch order details');
             const data = await response.json();
             setOrderDetails(data);
@@ -123,10 +123,10 @@ function HistoryDetail() {
     const fetchAllData = async () => {
         try {
             const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-                fetch('https://lanchangbackend-production.up.railway.app/soups'),
-                fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-                fetch('https://lanchangbackend-production.up.railway.app/meats'),
-                fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+                fetch('http://localhost:3333/soups'),
+                fetch('http://localhost:3333/sizes'),
+                fetch('http://localhost:3333/meats'),
+                fetch('http://localhost:3333/noodletypes')
 
             ]);
             const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -177,7 +177,7 @@ function HistoryDetail() {
 
     const fetchMenus = async () => {
         try {
-            const otherRes = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
+            const otherRes = await fetch('http://localhost:3333/getmenu');
             const otherData = await otherRes.json();
             setOtherMenu(otherData);
         } catch (error) {

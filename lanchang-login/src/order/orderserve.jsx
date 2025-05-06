@@ -65,11 +65,11 @@
 
 //   const fetchOrders = async () => {
 //     try {
-//       const response = await fetch('https://lanchangbackend-production.up.railway.app/getpreparingorders');
+//       const response = await fetch('http://localhost:3333/getpreparingorders');
 //       if (response.ok) {
 //         const data = await response.json();
 //         const ordersWithDetails = await Promise.all(data.map(async (order) => {
-//           const detailsResponse = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${order.Order_id}`);
+//           const detailsResponse = await fetch(`http://localhost:3333/getorderdetail/${order.Order_id}`);
 //           const details = await detailsResponse.json();
 //           return { ...order, details: details.filter(item => item.status_id === "4") };
 //         }));
@@ -85,8 +85,8 @@
 //   const fetchMenus = async () => {
 //     try {
 //       const [noodleRes, otherRes] = await Promise.all([
-//         fetch('https://lanchangbackend-production.up.railway.app/getnoodlemenu'),
-//         fetch('https://lanchangbackend-production.up.railway.app/getmenu')
+//         fetch('http://localhost:3333/getnoodlemenu'),
+//         fetch('http://localhost:3333/getmenu')
 //       ]);
 //       const [noodleData, otherData] = await Promise.all([
 //         noodleRes.json(),
@@ -125,7 +125,7 @@
 
 //   const confirmUpdate = async () => {
 //     try {
-//       const response = await fetch(`https://lanchangbackend-production.up.railway.app/updateorderstatus/${updatingItemId}`, {
+//       const response = await fetch(`http://localhost:3333/updateorderstatus/${updatingItemId}`, {
 //         method: 'PUT',
 //         headers: {
 //           'Content-Type': 'application/json',

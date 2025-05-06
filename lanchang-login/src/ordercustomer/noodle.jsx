@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 function fetchNoodletype() {
-  return fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+  return fetch('http://localhost:3333/noodletypes')
     .then(response => {
       if (!response.ok) {
         throw new Error('Network is not ok');
@@ -15,7 +15,7 @@ function fetchNoodletype() {
 }
 
 function fetchSoup() {
-  return fetch('https://lanchangbackend-production.up.railway.app/soups')
+  return fetch('http://localhost:3333/soups')
     .then(response => {
       if (!response.ok) {
         throw new Error('Network is not ok');
@@ -29,7 +29,7 @@ function fetchSoup() {
 }
 
 function fetchMeat() {
-  return fetch('https://lanchangbackend-production.up.railway.app/meats')
+  return fetch('http://localhost:3333/meats')
     .then(response => {
       if (!response.ok) {
         throw new Error('Network is not ok');
@@ -43,7 +43,7 @@ function fetchMeat() {
 }
 
 function fetchSize() {
-  return fetch('https://lanchangbackend-production.up.railway.app/sizes')
+  return fetch('http://localhost:3333/sizes')
     .then(response => {
       if (!response.ok) {
         throw new Error('Network is not ok');

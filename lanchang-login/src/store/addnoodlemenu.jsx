@@ -40,10 +40,10 @@ function MenuForm() {
     const fetchData = async () => {
       try {
         const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-          fetch('https://lanchangbackend-production.up.railway.app/soups'),
-          fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-          fetch('https://lanchangbackend-production.up.railway.app/meats'),
-          fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+          fetch('http://localhost:3333/soups'),
+          fetch('http://localhost:3333/sizes'),
+          fetch('http://localhost:3333/meats'),
+          fetch('http://localhost:3333/noodletypes')
         ]);
 
         const soupData = await soupRes.json();
@@ -129,7 +129,7 @@ function MenuForm() {
       });
 
       try {
-        const response = await fetch('https://lanchangbackend-production.up.railway.app/addnoodlemenu', {
+        const response = await fetch('http://localhost:3333/addnoodlemenu', {
           method: 'POST',
           body: formDataToSend
         });

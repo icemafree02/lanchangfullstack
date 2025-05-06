@@ -35,7 +35,7 @@ const MenuOrder = () => {
 
   const fetchInitialMenu = async () => {
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
+      const response = await fetch('http://localhost:3333/menu');
       const menuItems = await response.json();
       setFilteredItems({ noodles: [], menus: menuItems });
       setOriginalItems(menuItems);
@@ -86,7 +86,7 @@ const MenuOrder = () => {
   };
 
   const getTotalCartItems = () => {
-    fetch(`https://lanchangbackend-production.up.railway.app/gettotalcartitems/${orderId}`)
+    fetch(`http://localhost:3333/gettotalcartitems/${orderId}`)
       .then(response => response.json())
       .then(data => {
         console.log('Total cart items:', data.total_items);
@@ -126,13 +126,13 @@ const MenuOrder = () => {
           let response;
           switch (category) {
             case 'beverage':
-              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
+              response = await fetch('http://localhost:3333/menu');
               break;
             case 'appetizer':
-              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
+              response = await fetch('http://localhost:3333/menu');
               break;
             case 'other':
-              response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
+              response = await fetch('http://localhost:3333/menu');
               break;
             default:
               setFilteredItems({ noodles: [], menus: [] });
@@ -165,7 +165,7 @@ const MenuOrder = () => {
       setIsNoodleCustomization(false);
       setActiveCategory('all');
 
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/menu');
+      const response = await fetch('http://localhost:3333/menu');
       const data = await response.json();
       setFilteredItems({ noodles: [], menus: data });
 
@@ -177,10 +177,10 @@ const MenuOrder = () => {
   const fetchAllComponent = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('https://lanchangbackend-production.up.railway.app/soups'),
-        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-        fetch('https://lanchangbackend-production.up.railway.app/meats'),
-        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+        fetch('http://localhost:3333/soups'),
+        fetch('http://localhost:3333/sizes'),
+        fetch('http://localhost:3333/meats'),
+        fetch('http://localhost:3333/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -279,7 +279,7 @@ const MenuOrder = () => {
       return;
     }
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/noodle', {
+      const response = await fetch('http://localhost:3333/noodle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -385,7 +385,7 @@ const MenuOrder = () => {
         {isNoodleCustomization ? renderNoodleCustomization() : (
           filteredItems.menus.map(item => (
             <div key={item.Menu_id} className="menu-item" onClick={() => handleMenuItemClick(item)}>
-              <img className="menu-picture" src={`https://lanchangbackend-production.up.railway.app/menuimage/${item.Menu_id}`} alt={item.Menu_name} />
+              <img className="menu-picture" src={`http://localhost:3333/menuimage/${item.Menu_id}`} alt={item.Menu_name} />
               <div className="menu-name">{item.Menu_name}</div>
               <div className="menu-price">{item.Menu_price} บาท</div>
             </div>

@@ -106,7 +106,7 @@ function OrderDetail() {
 
     const fetchOrderDetails = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${id}`);
+            const response = await fetch(`http://localhost:3333/getorderdetail/${id}`);
             if (!response.ok) throw new Error('Failed to fetch order details');
             const data = await response.json();
             const filteredData = data.filter(item => item.status_id === "3");
@@ -119,8 +119,8 @@ function OrderDetail() {
     const fetchMenus = async () => {
         try {
             const [noodleRes, otherRes] = await Promise.all([
-                fetch('https://lanchangbackend-production.up.railway.app/getnoodlemenu'),
-                fetch('https://lanchangbackend-production.up.railway.app/getmenu')
+                fetch('http://localhost:3333/getnoodlemenu'),
+                fetch('http://localhost:3333/getmenu')
             ]);
             const [noodleData, otherData] = await Promise.all([
                 noodleRes.json(),
@@ -159,7 +159,7 @@ function OrderDetail() {
 
     const confirmUpdate = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updateorderstatus/${updatingItemId}`, {
+            const response = await fetch(`http://localhost:3333/updateorderstatus/${updatingItemId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -52,7 +52,7 @@ export default function MeatStats({ startDate, endDate }) {
         const queryParams = new URLSearchParams();
         if (startDate) queryParams.append('startDate', startDate);
         if (endDate) queryParams.append('endDate', endDate);
-        fetch(`https://lanchangbackend-production.up.railway.app/allmeats?${queryParams.toString()}`)
+        fetch(`http://localhost:3333/allmeats?${queryParams.toString()}`)
             .then(response => response.json())
             .then(data => setStats(data))
             .catch(error => console.error('Error fetching soups:', error));

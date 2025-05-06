@@ -50,7 +50,7 @@ export default function TotalOrder({ startDate, endDate }) {
       const queryParams = new URLSearchParams();
       if (startDate) queryParams.append('startDate', startDate);
       if (endDate) queryParams.append('endDate', endDate);
-      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getordertotal?${queryParams.toString()}`);
+      const response = await fetch(`http://localhost:3333/getordertotal?${queryParams.toString()}`);
       if (!response.ok) {
         throw new Error('ไม่สามารถเชื่อมต่อได้');
       }

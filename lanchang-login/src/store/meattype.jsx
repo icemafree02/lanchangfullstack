@@ -36,7 +36,7 @@ function Meat() {
 
     const fetchMeatTypes = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/meats');
+            const response = await fetch('http://localhost:3333/meats');
             const data = await response.json();
             setMeats(data);
         } catch (error) {
@@ -62,7 +62,7 @@ function Meat() {
         }
 
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/addmeat', {
+            const response = await fetch('http://localhost:3333/addmeat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ function Meat() {
         if (!itemToDelete) return;
     
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deleteMeat/${itemToDelete.Meat_id}`, {
+            const response = await fetch(`http://localhost:3333/deleteMeat/${itemToDelete.Meat_id}`, {
                 method: 'DELETE',
             });
     
@@ -158,7 +158,7 @@ function Meat() {
         }
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatemeat/${itemToEdit.Meat_id}`, {
+            const response = await fetch(`http://localhost:3333/updatemeat/${itemToEdit.Meat_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

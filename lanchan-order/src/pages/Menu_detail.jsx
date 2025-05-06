@@ -24,7 +24,7 @@ const MenuDetail = () => {
   const handleAddToCart = async () => {
     if (selectedMenu) {
       try {
-        const response = await fetch('https://lanchangbackend-production.up.railway.app/addmenutocart', {
+        const response = await fetch('http://localhost:3333/addmenutocart', {
           method: 'POST', 
           headers: {
             'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ const MenuDetail = () => {
             <div>
               <img
                 className="picture-detail"
-                src={`https://lanchangbackend-production.up.railway.app/menuimage/${selectedMenu.Menu_id}`}
+                src={`http://localhost:3333/menuimage/${selectedMenu.Menu_id}`}
                 alt={selectedMenu.Menu_name}
               />
               <h2 className="title">{selectedMenu.Menu_name}</h2>

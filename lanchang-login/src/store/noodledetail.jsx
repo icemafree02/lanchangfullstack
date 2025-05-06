@@ -44,7 +44,7 @@ function MenuForm() {
 
     const fetchNoodlemenuDetails = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getnoodlemenu/${id}`);
+            const response = await fetch(`http://localhost:3333/getnoodlemenu/${id}`);
             if (!response.ok) throw new Error('Failed to fetch noodle menu details');
             const data = await response.json();
             setFormData({
@@ -66,10 +66,10 @@ function MenuForm() {
     const fetchDropdownData = async () => {
         try {
             const [soupsRes, sizesRes, meatsRes, noodleTypesRes] = await Promise.all([
-                fetch('https://lanchangbackend-production.up.railway.app/soups'),
-                fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-                fetch('https://lanchangbackend-production.up.railway.app/meats'),
-                fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+                fetch('http://localhost:3333/soups'),
+                fetch('http://localhost:3333/sizes'),
+                fetch('http://localhost:3333/meats'),
+                fetch('http://localhost:3333/noodletypes')
             ]);
 
             if (!soupsRes.ok || !sizesRes.ok || !meatsRes.ok || !noodleTypesRes.ok) {
@@ -128,7 +128,7 @@ function MenuForm() {
         }
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatenoodlemenu/${id}`, {
+            const response = await fetch(`http://localhost:3333/updatenoodlemenu/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

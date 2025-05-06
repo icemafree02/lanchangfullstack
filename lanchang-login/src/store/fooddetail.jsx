@@ -34,7 +34,7 @@ function FoodDetail() {
 
   const fetchMenuDetails = async () => {
     try {
-      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getmenu/${id}`);
+      const response = await fetch(`http://localhost:3333/getmenu/${id}`);
       if (response.ok) {
         const data = await response.json();
         setFormData({
@@ -82,7 +82,7 @@ function FoodDetail() {
     }
 
     try {
-      const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatemenu/${id}`, {
+      const response = await fetch(`http://localhost:3333/updatemenu/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

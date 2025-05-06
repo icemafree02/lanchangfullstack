@@ -36,7 +36,7 @@ function SoupManagement() {
 
     const fetchSoups = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/soups');
+            const response = await fetch('http://localhost:3333/soups');
             const data = await response.json();
             setSoups(data);
         } catch (error) {
@@ -71,7 +71,7 @@ function SoupManagement() {
         }
 
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/addsoup', {
+            const response = await fetch('http://localhost:3333/addsoup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ function SoupManagement() {
         if (!itemToDelete) return;
     
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deletesoup/${itemToDelete.Soup_id}`, {
+            const response = await fetch(`http://localhost:3333/deletesoup/${itemToDelete.Soup_id}`, {
                 method: 'DELETE',
             });
     
@@ -159,7 +159,7 @@ function SoupManagement() {
         }
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatesoup/${itemToEdit.Soup_id}`, {
+            const response = await fetch(`http://localhost:3333/updatesoup/${itemToEdit.Soup_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -4,18 +4,6 @@ import pandas as pd
 from collections import Counter
 from mlxtend.frequent_patterns import apriori, association_rules
 
-def expand_transaction(transaction):
-    """แปลงเมนูซ้ำให้กลายเป็นชื่อไม่ซ้ำ เช่น ไก่ → ไก่, ไก่_2, ไก่_3"""
-    counter = Counter(transaction)
-    expanded = []
-    for item, count in counter.items():
-        if count == 1:
-            expanded.append(item)
-        else:
-            for i in range(1, count + 1):
-                suffix = f"_{i}" if i > 1 else ""
-                expanded.append(f"{item}{suffix}")
-    return expanded
 
 def run_apriori(transactions, min_support=0.01, min_confidence=0.5, min_lift=1.0):
     try:
@@ -24,9 +12,6 @@ def run_apriori(transactions, min_support=0.01, min_confidence=0.5, min_lift=1.0
                 'frequentItemsets': [],
                 'associationRules': []
             }
-
-        # ขยายรายการที่ซ้ำภายในออเดอร์
-        transactions = [expand_transaction(t) for t in transactions]
 
         # รวบรวมรายการทั้งหมด
         all_items = sorted(set(item for transaction in transactions for item in transaction))

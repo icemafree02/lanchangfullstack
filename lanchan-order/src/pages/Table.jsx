@@ -27,7 +27,7 @@ function TableSelection() {
       }
 
       // Step 1: Reserve the selected table
-      const reserveResponse = await fetch(`https://lanchangbackend-production.up.railway.app/table/${tableNumber}`, {
+      const reserveResponse = await fetch(`http://localhost:3333/table/${tableNumber}`, {
         method: 'POST',                    
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_id: 2 }),
@@ -50,7 +50,7 @@ function TableSelection() {
       }
 
       // Step 3: Create a new order for this table
-      const createOrderResponse = await fetch('https://lanchangbackend-production.up.railway.app/orders', {
+      const createOrderResponse = await fetch('http://localhost:3333/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableId: tableNumber }),

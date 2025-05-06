@@ -96,7 +96,7 @@ function Promotion() {
 
     const fetchMenuItems = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
+            const response = await fetch('http://localhost:3333/getmenu');
             if (response.ok) {
                 const data = await response.json();
                 setMenuItems(data);
@@ -110,7 +110,7 @@ function Promotion() {
 
     const fetchPromotions = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/getpromotions');
+            const response = await fetch('http://localhost:3333/getpromotions');
             if (response.ok) {
                 const data = await response.json();
                 setPromotions(data);
@@ -128,7 +128,7 @@ function Promotion() {
 
     const fetchPromotionDetails = async (promotionId) => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/getpromotiondetails/${promotionId}`);
+            const response = await fetch(`http://localhost:3333/getpromotiondetails/${promotionId}`);
             if (response.ok) {
                 const data = await response.json();
                 setPromotionDetails(prev => ({
@@ -163,7 +163,7 @@ function Promotion() {
         e.preventDefault();
 
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/addpromotion', {
+            const response = await fetch('http://localhost:3333/addpromotion', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ function Promotion() {
 
     const handleDeleteConfirm = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deletepromotion/${selectedPromotionId}`, {
+            const response = await fetch(`http://localhost:3333/deletepromotion/${selectedPromotionId}`, {
                 method: 'DELETE',
             });
 
@@ -274,7 +274,7 @@ function Promotion() {
 
     const handleEditSubmit = async () => {
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatepromotion/${editData.promotionId}`, {
+            const response = await fetch(`http://localhost:3333/updatepromotion/${editData.promotionId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

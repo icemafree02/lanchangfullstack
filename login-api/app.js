@@ -26,10 +26,7 @@ const mysql = require('mysql2');
 const urlDB = `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 
 // สร้างการเชื่อมต่อฐานข้อมูล (แนะนำให้แยกไฟล์ config สำหรับข้อมูลฐานข้อมูล)
-const connection = mysql.createConnection({host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'project'});
+const connection = mysql.createConnection(urlDB);
 
 readdirSync('./Routes').map((file) => {
   const routePath = path.join(__dirname, 'Routes', file);

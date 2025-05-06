@@ -164,10 +164,10 @@ function Basket() {
   const fetchAllData = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('https://lanchangbackend-production.up.railway.app/soups'),
-        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-        fetch('https://lanchangbackend-production.up.railway.app/meats'),
-        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+        fetch('http://localhost:3333/soups'),
+        fetch('http://localhost:3333/sizes'),
+        fetch('http://localhost:3333/meats'),
+        fetch('http://localhost:3333/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -202,7 +202,7 @@ function Basket() {
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
+      const response = await fetch('http://localhost:3333/getmenu');
       if (response.ok) {
         const data = await response.json();
         setMenuItems(data);
@@ -231,8 +231,8 @@ function Basket() {
 
     try {
       const endpoint = itemToDelete.isNoodleMenu ?
-        `https://lanchangbackend-production.up.railway.app/deletenoodlemenu/${itemToDelete.Noodle_menu_id}` :
-        `https://lanchangbackend-production.up.railway.app/deletemenu/${itemToDelete.Menu_id}`;
+        `http://localhost:3333/deletenoodlemenu/${itemToDelete.Noodle_menu_id}` :
+        `http://localhost:3333/deletemenu/${itemToDelete.Menu_id}`;
 
       const response = await fetch(endpoint, {
         method: 'DELETE',

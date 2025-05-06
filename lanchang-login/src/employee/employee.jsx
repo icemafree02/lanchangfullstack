@@ -68,7 +68,7 @@ function EmployeeList() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/getem');
+      const response = await fetch('http://localhost:3333/getem');
       if (response.ok) {
         const data = await response.json();
         setEmployees(data);
@@ -84,7 +84,7 @@ function EmployeeList() {
     const isConfirmed = window.confirm('คุณแน่ใจหรือไม่ที่จะลบพนักงานคนนี้?');
     if (isConfirmed) {
       try {
-        const response = await fetch(`https://lanchangbackend-production.up.railway.app/deleteemployee/${employeeId}`, {
+        const response = await fetch(`http://localhost:3333/deleteemployee/${employeeId}`, {
           method: 'DELETE',
         });
         if (response.ok) {

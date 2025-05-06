@@ -23,7 +23,7 @@ export default function MonthlyRevenueChart({startDate, endDate}) {
       if (startDate) queryParams.append('startDate', startDate);
       if (endDate) queryParams.append('endDate', endDate);
     
-      const response = await fetch(`https://lanchangbackend-production.up.railway.app/getMonthlyRevenue?${queryParams.toString()}`);
+      const response = await fetch(`http://localhost:3333/getMonthlyRevenue?${queryParams.toString()}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }

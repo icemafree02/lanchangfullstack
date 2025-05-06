@@ -18,7 +18,7 @@ export default function Orders({  startDate, endDate }) {
         const queryParams = new URLSearchParams();
         if (startDate) queryParams.append('startDate', startDate);
         if (endDate) queryParams.append('endDate', endDate);
-        const response = await fetch(`https://lanchangbackend-production.up.railway.app/getTopOrderedMenus?${queryParams.toString()}`);
+        const response = await fetch(`http://localhost:3333/getTopOrderedMenus?${queryParams.toString()}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }

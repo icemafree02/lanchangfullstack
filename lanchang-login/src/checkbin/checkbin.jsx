@@ -209,11 +209,11 @@ const OrderDisplay = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('https://lanchangbackend-production.up.railway.app/getserveoder');
+      const response = await fetch('http://localhost:3333/getserveoder');
       if (response.ok) {
         const data = await response.json();
         const ordersWithDetails = await Promise.all(data.map(async (order) => {
-          const detailsResponse = await fetch(`https://lanchangbackend-production.up.railway.app/getorderdetail/${order.Order_id}`);
+          const detailsResponse = await fetch(`http://localhost:3333/getorderdetail/${order.Order_id}`);
           const details = await detailsResponse.json();
 
           setNoodleMenu(details.filter(item => item.status_id === 5));
@@ -233,7 +233,7 @@ const OrderDisplay = () => {
 
   const fetchMenus = async () => {
     try {
-      const otherRes = await fetch('https://lanchangbackend-production.up.railway.app/getmenu');
+      const otherRes = await fetch('http://localhost:3333/getmenu');
       const otherData = await otherRes.json();
       setOtherMenu(otherData);
     } catch (error) {
@@ -244,10 +244,10 @@ const OrderDisplay = () => {
   const fetchAllData = async () => {
     try {
       const [soupRes, sizeRes, meatRes, noodleTypeRes] = await Promise.all([
-        fetch('https://lanchangbackend-production.up.railway.app/soups'),
-        fetch('https://lanchangbackend-production.up.railway.app/sizes'),
-        fetch('https://lanchangbackend-production.up.railway.app/meats'),
-        fetch('https://lanchangbackend-production.up.railway.app/noodletypes')
+        fetch('http://localhost:3333/soups'),
+        fetch('http://localhost:3333/sizes'),
+        fetch('http://localhost:3333/meats'),
+        fetch('http://localhost:3333/noodletypes')
       ]);
 
       const [soupData, sizeData, meatData, noodleTypeData] = await Promise.all([
@@ -268,11 +268,11 @@ const OrderDisplay = () => {
 
   const fetchPromotions = async () => {
     try {
-      const promotionsRes = await fetch('https://lanchangbackend-production.up.railway.app/getactivepromotions');
+      const promotionsRes = await fetch('http://localhost:3333/getactivepromotions');
       const promotionsData = await promotionsRes.json();
 
       const promotionsWithItems = await Promise.all(promotionsData.map(async (promo) => {
-        const itemsRes = await fetch(`https://lanchangbackend-production.up.railway.app/getpromotionitems/${promo.Promotion_id}`);
+        const itemsRes = await fetch(`http://localhost:3333/getpromotionitems/${promo.Promotion_id}`);
         const items = await itemsRes.json();
         return { ...promo, items };
       }));
@@ -536,7 +536,7 @@ const OrderDisplay = () => {
 
       // อัพเดตสถานะการชำระเงินเฉพาะรายการที่เลือก
       await Promise.all(selectedItems.map(item =>
-        fetch(`https://lanchangbackend-production.up.railway.app/updateorderstatus/${item.Order_detail_id}`, {
+        fetch(`http://localhost:3333/updateorderstatus/${item.Order_detail_id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -548,7 +548,7 @@ const OrderDisplay = () => {
       // อัพเดตสถานะการชำระเงินของออเดอร์
       if (selectedItems.length === order.details.length) {
         // ถ้าเลือกทุกรายการ อัพเดตสถานะโต๊ะด้วย
-        const orderResponse = await fetch(`https://lanchangbackend-production.up.railway.app/updateorderpayment/${payingOrderId}`, {
+        const orderResponse = await fetch(`http://localhost:3333/updateorderpayment/${payingOrderId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -557,7 +557,7 @@ const OrderDisplay = () => {
         });
 
         if (orderResponse.ok) {
-          const tableResponse = await fetch(`https://lanchangbackend-production.up.railway.app/updatetablestatus/${order.tables_id}`, {
+          const tableResponse = await fetch(`http://localhost:3333/updatetablestatus/${order.tables_id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

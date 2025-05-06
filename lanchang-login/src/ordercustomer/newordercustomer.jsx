@@ -60,7 +60,7 @@ const Newordercustomer = () => {
         if (!confirm) return;
 
         try {
-            const reserveResponse = await fetch(`https://lanchangbackend-production.up.railway.app/table/${TableList}`, {
+            const reserveResponse = await fetch(`http://localhost:3333/table/${TableList}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status_id: 2 }),
@@ -70,7 +70,7 @@ const Newordercustomer = () => {
                 throw new Error(`Failed to reserve table ${TableList}`);
               }
 
-            const createOrderResponse = await fetch('https://lanchangbackend-production.up.railway.app/orders', {
+            const createOrderResponse = await fetch('http://localhost:3333/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tableId: TableList }),
@@ -115,7 +115,7 @@ const Newordercustomer = () => {
             ];
 
 
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/orders/${orderId}/add_items`, {
+            const response = await fetch(`http://localhost:3333/orders/${orderId}/add_items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cartItems: items }),

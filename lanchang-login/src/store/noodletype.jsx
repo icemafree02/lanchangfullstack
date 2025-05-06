@@ -36,7 +36,7 @@ function Menuex() {
 
     const fetchNoodleTypes = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/noodletypes');
+            const response = await fetch('http://localhost:3333/noodletypes');
             const data = await response.json();
             setNoodleTypes(data);
         } catch (error) {
@@ -72,7 +72,7 @@ function Menuex() {
         }
 
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/addnoodletype', {
+            const response = await fetch('http://localhost:3333/addnoodletype', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ function Menuex() {
         if (!itemToDelete) return;
     
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deletenoodletype/${itemToDelete.Noodle_type_id}`, {
+            const response = await fetch(`http://localhost:3333/deletenoodletype/${itemToDelete.Noodle_type_id}`, {
                 method: 'DELETE',
             });
     
@@ -161,7 +161,7 @@ function Menuex() {
         }
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatenoodletype/${itemToEdit.Noodle_type_id}`, {
+            const response = await fetch(`http://localhost:3333/updatenoodletype/${itemToEdit.Noodle_type_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

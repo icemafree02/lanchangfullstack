@@ -25,7 +25,7 @@ const Existordercustomer = () => {
     useEffect(() => {
         const fetchExistOrders = async () => {
             try {
-                const response = await fetch('https://lanchangbackend-production.up.railway.app/getorders');
+                const response = await fetch('http://localhost:3333/getorders');
                 if (!response.ok) throw new Error('Failed to fetch orders');
 
                 const data = await response.json();
@@ -137,7 +137,7 @@ const Existordercustomer = () => {
                 }),
             ];
 
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/orders/${selectedOrder}/add_items`, {
+            const response = await fetch(`http://localhost:3333/orders/${selectedOrder}/add_items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cartItems: items }),

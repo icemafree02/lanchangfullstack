@@ -52,7 +52,7 @@ export default function SizeStats({ startDate, endDate }) {
         const queryParams = new URLSearchParams();
         if (startDate) queryParams.append('startDate', startDate);
         if (endDate) queryParams.append('endDate', endDate);
-        fetch(`https://lanchangbackend-production.up.railway.app/allsizes?${queryParams.toString()}`)
+        fetch(`http://localhost:3333/allsizes?${queryParams.toString()}`)
             .then(response => response.json())
             .then(data => setStats(data))
             .catch(error => console.error('Error fetching soups:', error));

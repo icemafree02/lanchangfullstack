@@ -36,7 +36,7 @@ function Size() {
 
     const fetchSizeTypes = async () => {
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/sizes');
+            const response = await fetch('http://localhost:3333/sizes');
             const data = await response.json();
             setSizes(data);
         } catch (error) {
@@ -72,7 +72,7 @@ function Size() {
         }
          
         try {
-            const response = await fetch('https://lanchangbackend-production.up.railway.app/addsize', {
+            const response = await fetch('http://localhost:3333/addsize', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ function Size() {
         if (!itemToDelete) return;
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/deletesize/${itemToDelete.Size_id}`, {
+            const response = await fetch(`http://localhost:3333/deletesize/${itemToDelete.Size_id}`, {
                 method: 'DELETE',
             });
 
@@ -156,7 +156,7 @@ function Size() {
         }
 
         try {
-            const response = await fetch(`https://lanchangbackend-production.up.railway.app/updatesize/${itemToEdit.Size_id}`, {
+            const response = await fetch(`http://localhost:3333/updatesize/${itemToEdit.Size_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
